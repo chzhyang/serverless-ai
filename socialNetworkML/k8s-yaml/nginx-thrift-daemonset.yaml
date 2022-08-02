@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --file ../docker-compose-k8s.yml
+    kompose.controller.type: daemonset
+    kompose.service.nodeport.port: "30080"
+    kompose.service.type: nodeport
+    kompose.version: 1.26.0 (40646f47)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: nginx-thrift
+  name: nginx-thrift
+spec:
+  selector:
+    matchLabels:
+      io.kompose.service: nginx-thrift
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: nginx-thrift
+    spec:
+      containers:
+        - image: 172.16.3.13:5000/openresty-thrift-ml:xenial
+          name: nginx-thrift
+          ports:
+            - containerPort: 8080
+          resources: {}
+      hostname: nginx-thrift
+      restartPolicy: Always
+  updateStrategy: {}
+status:
+  currentNumberScheduled: 0
+  desiredNumberScheduled: 0
+  numberMisscheduled: 0
+  numberReady: 0

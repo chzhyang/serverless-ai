@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: /snap/kompose/19/kompose-linux-amd64 convert --file ../docker-compose-k8s-opt-avx512.yml
+    kompose.version: 1.21.0 (992df58d8)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: post-storage-memcached
+  name: post-storage-memcached
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: post-storage-memcached
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: /snap/kompose/19/kompose-linux-amd64 convert --file ../docker-compose-k8s-opt-avx512.yml
+        kompose.version: 1.21.0 (992df58d8)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: post-storage-memcached
+    spec:
+      containers:
+      - image: ccr-registry.caas.intel.com/cnbench/dsb-social-ml/memcached:1.6.7
+        imagePullPolicy: ""
+        name: post-storage-memcached
+        ports:
+        - containerPort: 11211
+        resources: {}
+      hostname: post-storage-memcached
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes: null
+status: {}

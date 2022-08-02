@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --file ../docker-compose-k8s-dev.yml --volumes hostPath
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: nginx-thrift
+  name: nginx-thrift
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: nginx-thrift
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert --file ../docker-compose-k8s-dev.yml --volumes hostPath
+        kompose.version: 1.22.0 (955b78124)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: nginx-thrift
+    spec:
+      containers:
+        - image: harbor.harbor.svc.service.wpax.intel.com/dev/zzhou/openresty-thrift-ml:xenial
+          name: nginx-thrift
+          ports:
+            - containerPort: 8080
+          resources: {}
+          volumeMounts:
+            - mountPath: /usr/local/openresty/nginx/lua-scripts
+              name: nginx-thrift-hostpath0
+            - mountPath: /usr/local/openresty/nginx/pages
+              name: nginx-thrift-hostpath1
+            - mountPath: /usr/local/openresty/nginx/conf/nginx.conf
+              name: nginx-thrift-hostpath2
+            - mountPath: /usr/local/openresty/nginx/jaeger-config.json
+              name: nginx-thrift-hostpath3
+            - mountPath: /gen-lua
+              name: nginx-thrift-hostpath4
+            - mountPath: /usr/local/openresty/lualib/thrift
+              name: nginx-thrift-hostpath5
+            - mountPath: /keys
+              name: nginx-thrift-hostpath6
+      hostname: nginx-thrift
+      restartPolicy: Always
+      volumes:
+        - hostPath:
+            path: /mnt/san03RAID1/users/zzhou/Benchmarks/deathstarbench-intel/socialNetworkML/nginx-web-server/lua-scripts
+          name: nginx-thrift-hostpath0
+        - hostPath:
+            path: /mnt/san03RAID1/users/zzhou/Benchmarks/deathstarbench-intel/socialNetworkML/nginx-web-server/pages
+          name: nginx-thrift-hostpath1
+        - hostPath:
+            path: /mnt/san03RAID1/users/zzhou/Benchmarks/deathstarbench-intel/socialNetworkML/nginx-web-server/conf/nginx.conf
+          name: nginx-thrift-hostpath2
+        - hostPath:
+            path: /mnt/san03RAID1/users/zzhou/Benchmarks/deathstarbench-intel/socialNetworkML/nginx-web-server/jaeger-config.json
+          name: nginx-thrift-hostpath3
+        - hostPath:
+            path: /mnt/san03RAID1/users/zzhou/Benchmarks/deathstarbench-intel/socialNetworkML/gen-lua
+          name: nginx-thrift-hostpath4
+        - hostPath:
+            path: /mnt/san03RAID1/users/zzhou/Benchmarks/deathstarbench-intel/socialNetworkML/docker/openresty-thrift/lua-thrift
+          name: nginx-thrift-hostpath5
+        - hostPath:
+            path: /mnt/san03RAID1/users/zzhou/Benchmarks/deathstarbench-intel/socialNetworkML/keys
+          name: nginx-thrift-hostpath6
+status: {}

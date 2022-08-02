@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: /snap/kompose/19/kompose-linux-amd64 convert --file ../docker-compose-k8s-opt-avx512.yml
+    kompose.version: 1.21.0 (992df58d8)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: social-graph-mongodb
+  name: social-graph-mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: social-graph-mongodb
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: /snap/kompose/19/kompose-linux-amd64 convert --file ../docker-compose-k8s-opt-avx512.yml
+        kompose.version: 1.21.0 (992df58d8)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: social-graph-mongodb
+    spec:
+      containers:
+      - args:
+        - --config
+        - /social-network-microservices/config/mongod.conf
+        image: ccr-registry.caas.intel.com/cnbench/dsb-social-ml/mongo:4.4.6
+        imagePullPolicy: ""
+        name: social-graph-mongodb
+        ports:
+        - containerPort: 27017
+        resources: {}
+      hostname: social-graph-mongodb
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes: null
+status: {}

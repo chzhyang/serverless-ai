@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --file ../docker-compose-k8s-dev.yml --volumes hostPath
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: media-service
+  name: media-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: media-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert --file ../docker-compose-k8s-dev.yml --volumes hostPath
+        kompose.version: 1.22.0 (955b78124)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: media-service
+    spec:
+      containers:
+        - command:
+            - MediaService
+          image: harbor.harbor.svc.service.wpax.intel.com/dev/zzhou/social-network-ml-microservices:latest
+          name: media-service
+          ports:
+            - containerPort: 9090
+          resources: {}
+          volumeMounts:
+            - mountPath: /social-network-microservices/config
+              name: media-service-hostpath0
+            - mountPath: /keys
+              name: media-service-hostpath1
+      hostname: media-service
+      restartPolicy: Always
+      volumes:
+        - hostPath:
+            path: /mnt/san03RAID1/users/zzhou/Benchmarks/deathstarbench-intel/socialNetworkML/config
+          name: media-service-hostpath0
+        - hostPath:
+            path: /mnt/san03RAID1/users/zzhou/Benchmarks/deathstarbench-intel/socialNetworkML/keys
+          name: media-service-hostpath1
+status: {}

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    kompose.cmd: /snap/kompose/19/kompose-linux-amd64 convert --file ../docker-compose-k8s-opt-avx512.yml
+    kompose.controller.type: daemonset
+    kompose.version: 1.21.0 (992df58d8)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: nginx-thrift
+  name: nginx-thrift
+spec:
+  selector:
+    matchLabels:
+      io.kompose.service: nginx-thrift
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: nginx-thrift
+    spec:
+      containers:
+      - image: ccr-registry.caas.intel.com/cnbench/dsb-social-ml/openresty-thrift-ml:xenial
+        imagePullPolicy: ""
+        name: nginx-thrift
+        ports:
+        - containerPort: 8080
+        resources: {}
+      hostname: nginx-thrift
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes: null

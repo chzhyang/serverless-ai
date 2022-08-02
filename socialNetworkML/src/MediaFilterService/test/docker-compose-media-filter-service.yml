@@ -1,0 +1,13 @@
+version: "3"
+services:
+  media-filter-service:
+    image: harbor.harbor.svc.service.wpax.intel.com/dev/zzhou/social-network-media-filter-service:latest
+    hostname: media-filter-service
+    container_name: media-filter-service
+    ports:
+      - 9090:9090
+    restart: always
+    deploy:
+      resources:
+          limits:
+            cpus: 8.00
