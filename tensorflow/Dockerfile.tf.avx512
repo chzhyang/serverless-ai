@@ -1,0 +1,18 @@
+FROM tensorflow/tensorflow:devel
+
+# ENV http_proxy=http://proxy-dmz.intel.com:912
+# ENV https_proxy=http://proxy-dmz.intel.com:912
+#ENV no_proxy="10.105.159.2,10.105.159.2,10.105.159.0/24,10.250.0.0/16,10.254.0.0/15,10.253.0.0/16,127.0.0.1,localhost,.svc,.pod,.cluster.local,.svc.cluster.local,.intel.com"
+
+WORKDIR /tensorflow_src
+
+# build tensorflow 2 with avx512 support from source
+# RUN git checkout r2.5
+RUN yes "" | python configure.py
+RUN bazel build --config=opt --copt=-mavx --copt=-mavx2 --copt=-mfma \
+    --copt=-mavx512f --copt=-mavx512cd \
+    --local_cpu_resources=HOST_CPUS*.5 //tensorflow/tools/pip_package:build_pip_package && \
+    ./bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/pip && \
+    pip install --no-cache-dir /tmp/pip/tensorflow-2.10.0-cp38-cp38-linux_x86_64.whl && \
+    rm -rf /root/.cache
+RUN pip list | grep tensorflow
