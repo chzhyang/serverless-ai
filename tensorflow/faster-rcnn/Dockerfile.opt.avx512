@@ -11,7 +11,7 @@ COPY faster-rcnn /faster-rcnn
 
 
 # RUN pip install --no-cache-dir -r /faster-rcnn/requirements.txt
-RUN pip install --no-cache-dir numpy==1.19.2 pillow==8.2.0 tensorflow-hub=0.12.0 matplotlib=3.5.2
+RUN pip install --no-cache-dir numpy==1.19.2 pillow==8.2.0 tensorflow-hub==0.12.0 matplotlib==3.5.2
 WORKDIR /faster-rcnn
 # ENV TF_ENABLE_ONEDNN_OPTS=1
 # ENV OMP_NUM_THREADS=8

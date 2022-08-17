@@ -8,7 +8,7 @@ FROM python:3.7
 COPY faster-rcnn /faster-rcnn
 
 # RUN pip install --no-cache-dir -r /faster-rcnn/requirements.txt
-RUN pip install --no-cache-dir numpy==1.19.2 pillow==8.2.0 tensorflow-cpu==2.5.0 tensorflow-hub=0.12.0 matplotlib=3.5.2
+RUN pip install --no-cache-dir numpy==1.19.2 pillow==8.2.0 tensorflow-cpu==2.5.0 tensorflow-hub==0.12.0 matplotlib==3.5.2
 # Warm up: download and cache models
 # RUN python /faster-rcnn/TextFilterService_cache_models.py
 
