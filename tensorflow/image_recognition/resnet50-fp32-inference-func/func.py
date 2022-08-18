@@ -22,7 +22,7 @@ class image_classifier_optimized_graph:
   model_name = MODEL_NAME
   input_graph = ""
   data_location = ""
-  results_file_path = ""
+  results_file_path = "" # need define+time
   accuracy_only = False
   num_inter_threads = 1 
   num_intra_threads = 36 # physical cores
@@ -39,18 +39,18 @@ class image_classifier_optimized_graph:
                data_location, 
                warmup_steps,
                steps,
-               accuracy_only, 
-               num_inter_threads, 
-               num_intra_threads):
+               num_inter_threads=1, 
+               num_intra_threads=36):
     self.batch_size = batch_size
     self.model_name = model_name
     self.input_graph = input_graph
     self.data_location = data_location
     self.warmup_steps = warmup_steps
     self.steps = steps
-    self.accuracy_only = accuracy_only
     self.num_inter_threads = num_inter_threads
     self.num_intra_threads = num_intra_threads 
+    self.calibrate = False
+
     self.validate_args()
 
   def write_results_output(self, predictions, filenames, labels):
@@ -75,7 +75,7 @@ class image_classifier_optimized_graph:
     infer_config.use_per_session_threads = 1
 
     return data_config, infer_config
-
+    
   def run(self):
     """run inference with optimized graph"""
     data_config, infer_config = self.optimize_graph()
@@ -176,7 +176,7 @@ class image_classifier_optimized_graph:
       # print throughput for both batch size 1 and 128
       print('Throughput: %.3f images/sec' % (self.batch_size / time_average))
 
-      return top_predictions, '{%.3f} ms'.format(time_average * 1000)
+      # return top_predictions, '{%.3f} ms'.format(time_average * 1000)
 
     # else: # accuracy check
     #   total_accuracy1, total_accuracy5 = (0.0, 0.0)
@@ -256,7 +256,15 @@ def main(context: Context):
     else:
         # print("Empty request", flush=True)
         # return "{}", 200
-        inference = image_classifier_optimized_graph(1,MODEL_NAME,"resnet50_fp32_pretrained_model.pb","","./",1,False)
+        inference = image_classifier_optimized_graph(
+                                                    1,
+                                                    MODEL_NAME,
+                                                    "resnet50_fp32_pretrained_model.pb",
+                                                    "",
+                                                    20,
+                                                    30,
+                                                    1,
+                                                    36)
         prediction, inference_latency = inference.run()
         print("prediction: ", prediction)
         print("inference_latency: ", inference_latency)
