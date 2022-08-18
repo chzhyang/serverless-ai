@@ -226,18 +226,18 @@ class image_classifier_optimized_graph:
       if self.accuracy_only:
         raise ValueError("You must use real data for accuracy measurement.")
 
-def inference(req: Request) -> str:
-    if req.method == "GET":
-        inference = image_classifier_optimized_graph(1,MODEL_NAME,"resnet50_fp32_pretrained_model.pb","","./",1,False)
-        prediction, inference_latency = inference.run()
-        return {'prediction': prediction, 'inference_latency': inference_latency}
-    elif req.method == "POST":
-        print("request form: ", req.form)
-        print("request url: ", req.form.get('url'))
-        input_url = req.form.get('url')
-        inference = image_classifier_optimized_graph(1,MODEL_NAME,"resnet50_fp32_pretrained_model.pb",input_url,"./",1,False)
-        prediction, inference_latency = inference.run()
-        return {'prediction': prediction, 'inference_latency': inference_latency}
+# def inference(req: Request) -> str:
+#     if req.method == "GET":
+#         inference = image_classifier_optimized_graph(1,MODEL_NAME,"resnet50_fp32_pretrained_model.pb","","./",1,False)
+#         prediction, inference_latency = inference.run()
+#         return {'prediction': prediction, 'inference_latency': inference_latency}
+#     elif req.method == "POST":
+#         print("request form: ", req.form)
+#         print("request url: ", req.form.get('url'))
+#         input_url = req.form.get('url')
+#         inference = image_classifier_optimized_graph(1,MODEL_NAME,"resnet50_fp32_pretrained_model.pb",input_url,"./",1,False)
+#         prediction, inference_latency = inference.run()
+#         return {'prediction': prediction, 'inference_latency': inference_latency}
         
 def main(context: Context):
     """ 
@@ -254,5 +254,10 @@ def main(context: Context):
         print(ret, flush=True)
         return inference(context.request), 200
     else:
-        print("Empty request", flush=True)
-        return "{}", 200
+        # print("Empty request", flush=True)
+        # return "{}", 200
+        inference = image_classifier_optimized_graph(1,MODEL_NAME,"resnet50_fp32_pretrained_model.pb","","./",1,False)
+        prediction, inference_latency = inference.run()
+        print("prediction: ", prediction)
+        print("inference_latency: ", inference_latency)
+        return {'prediction': prediction, 'inference_latency': inference_latency}, 200
