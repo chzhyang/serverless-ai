@@ -24,8 +24,8 @@ class image_classifier_optimized_graph:
   data_location = ""
   results_file_path = ""
   accuracy_only = False
-  num_inter_threads = 0
-  num_intra_threads = 0
+  num_inter_threads = 1 
+  num_intra_threads = 36 # physical cores
   data_num_inter_threads = 32
   data_num_intra_threads = 14
   num_cores = 28
