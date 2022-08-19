@@ -22,7 +22,7 @@ class image_classifier_optimized_graph:
   model_name = MODEL_NAME
   input_graph = ""
   data_location = ""
-  results_file_path = "" # need define+time
+  results_file_path = "./" # need define+time 不是log
   accuracy_only = False
   num_inter_threads = 1 
   num_intra_threads = 36 # physical cores
