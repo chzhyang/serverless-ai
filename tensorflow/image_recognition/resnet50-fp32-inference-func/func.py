@@ -16,6 +16,8 @@ INPUTS = 'input'
 OUTPUTS = 'predict'
 RESNET_IMAGE_SIZE = 224
 
+# tf.keras.datasets.
+
 class image_classifier_optimized_graph:
   """Evaluate image classifier with optimized TensorFlow graph"""
   batch_size = -1
@@ -23,7 +25,6 @@ class image_classifier_optimized_graph:
   input_graph = ""
   data_location = ""
   results_file_path = "" # need define+time
-  accuracy_only = False
   num_inter_threads = 1 
   num_intra_threads = 36 # physical cores
   data_num_inter_threads = 32
@@ -118,9 +119,18 @@ class image_classifier_optimized_graph:
                               [OUTPUTS], dtypes.float32.as_datatype_enum, False)
       tf.import_graph_def(output_graph, name='')
 
-    # Definite input and output Tensors for detection_graph
+      # log
+      print("   # opname:")
+      opname = [tensor.name for tensor in tf.get_default_graph().as_graph_def().node] 
+      print(opname)
+
+    # Define input and output Tensors for detection_graph
     input_tensor = infer_graph.get_tensor_by_name('input:0')
     output_tensor = infer_graph.get_tensor_by_name('predict:0')
+
+    # log
+    print("   input:", input_tensor)
+    print("   output:", output_tensor)
 
     data_sess = tf.compat.v1.Session(graph=data_graph,  config=data_config)
     infer_sess = tf.compat.v1.Session(graph=infer_graph, config=infer_config)
@@ -129,95 +139,36 @@ class image_classifier_optimized_graph:
     num_remaining_images = dataset.num_examples_per_epoch(subset=subset) - num_processed_images \
         if self.data_location else (self.batch_size * self.steps)
 
-    if (not self.accuracy_only):
-      iteration = 0
-      warm_up_iteration = self.warmup_steps
-      total_run = self.steps
-      total_time = 0
+    # warm_up_iteration = self.warmup_steps
+    total_time = 0
 
-      while num_remaining_images >= self.batch_size and iteration < total_run:
-        iteration += 1
-        tf_filenames = None
-        np_labels = None
-        data_load_start = time.time()
-        if self.results_file_path:
-          image_np, np_labels, tf_filenames = data_sess.run([images, labels, filenames])
-        else:
-          image_np = data_sess.run(images)
+    tf_filenames = None
+    np_labels = None
+    data_load_start = time.time()
+    if self.results_file_path:
+      image_np, np_labels, tf_filenames = data_sess.run([images, labels, filenames])
+    else:
+      image_np = data_sess.run(images)
 
-        data_load_time = time.time() - data_load_start
+    data_load_time = time.time() - data_load_start
 
-        num_processed_images += self.batch_size
-        num_remaining_images -= self.batch_size
+    num_processed_images += self.batch_size
+    num_remaining_images -= self.batch_size
 
-        start_time = time.time()
-        predictions = infer_sess.run(output_tensor, feed_dict={input_tensor: image_np})
-        time_consume = time.time() - start_time
+    start_time = time.time()
+    predictions = infer_sess.run(output_tensor, feed_dict={input_tensor: image_np})
+    time_consume = time.time() - start_time
 
-        top_predictions = np.argmax(predictions, 1)
-        print("top_predictions = ", top_predictions)
-        # Write out the file name, expected label, and top prediction
-        self.write_results_output(predictions, tf_filenames, np_labels)
+    top_predictions = np.argmax(predictions, 1)
+    print("top_predictions = ", top_predictions)
+    # Write out the file name, expected label, and top prediction
+    self.write_results_output(predictions, tf_filenames, np_labels)
 
-        # only add data loading time for real data, not for dummy data
-        if self.data_location:
-          time_consume += data_load_time
+    # only add data loading time for real data, not for dummy data
+    if self.data_location:
+      time_consume += data_load_time
 
-        print('Iteration %d: %.6f sec' % (iteration, time_consume))
-        if iteration > warm_up_iteration:
-          total_time += time_consume
-
-      time_average = total_time / (iteration - warm_up_iteration)
-      print('Average time: %.6f sec' % (time_average))
-
-      print('Batch size = %d' % self.batch_size)
-      if (self.batch_size == 1):
-        print('Latency: %.3f ms' % (time_average * 1000))
-      # print throughput for both batch size 1 and 128
-      print('Throughput: %.3f images/sec' % (self.batch_size / time_average))
-
-      # return top_predictions, '{%.3f} ms'.format(time_average * 1000)
-
-    # else: # accuracy check
-    #   total_accuracy1, total_accuracy5 = (0.0, 0.0)
-
-    #   while num_remaining_images >= self.batch_size:
-    #     # Reads and preprocess data
-    #     tf_filenames = None
-    #     if self.results_file_path:
-    #       np_images, np_labels, tf_filenames = data_sess.run([images, labels, filenames])
-    #     else:
-    #       np_images, np_labels = data_sess.run([images, labels])
-    #     num_processed_images += self.batch_size
-    #     num_remaining_images -= self.batch_size
-
-    #     start_time = time.time()
-    #     # Compute inference on the preprocessed data
-    #     predictions = infer_sess.run(output_tensor,
-    #                            {input_tensor: np_images})
-    #     elapsed_time = time.time() - start_time
-
-    #     # Write out the file name, expected label, and top prediction
-    #     self.write_results_output(predictions, tf_filenames, np_labels)
-
-    #     with tf.Graph().as_default() as accu_graph:
-    #       accuracy1 = tf.reduce_sum(
-    #         input_tensor=tf.cast(tf.nn.in_top_k(predictions=tf.constant(predictions),
-    #                                targets=tf.constant(np_labels), k=1), tf.float32))
-
-    #       accuracy5 = tf.reduce_sum(
-    #         input_tensor=tf.cast(tf.nn.in_top_k(predictions=tf.constant(predictions),
-    #                                targets=tf.constant(np_labels), k=5), tf.float32))
-    #       with tf.compat.v1.Session() as accu_sess:
-    #         np_accuracy1, np_accuracy5 = accu_sess.run([accuracy1, accuracy5])
-
-    #       total_accuracy1 += np_accuracy1
-    #       total_accuracy5 += np_accuracy5
-
-    #     print("Iteration time: %0.4f ms" % elapsed_time)
-    #     print("Processed %d images. (Top1 accuracy, Top5 accuracy) = (%0.4f, %0.4f)" \
-    #               % (num_processed_images, total_accuracy1 / num_processed_images,
-    #                  total_accuracy5 / num_processed_images))
+    total_time = time_consume
 
   def validate_args(self):
     """validate the arguments"""
