@@ -1,5 +1,0 @@
-envs:
-- name: EXAMPLE1
-  value: value
-invocation:
-  format: "http"

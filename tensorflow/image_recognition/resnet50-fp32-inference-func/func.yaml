@@ -1,0 +1,23 @@
+specVersion: 0.25.0
+name: python-tensorflow
+namespace: ""
+runtime: python
+registry: docker.io/chzhyang
+image: docker.io/chzhyang/python-tensorflow:latest
+imageDigest: ""
+build: local
+git: {}
+buildpacks: []
+builder: pack
+volumes: []
+buildEnvs: []
+envs: []
+annotations: {}
+options: {}
+labels: []
+healthEndpoints:
+  liveness: /health/liveness
+  readiness: /health/readiness
+created: 2022-09-05T01:58:57.915418078Z
+invocation:
+  format: http
