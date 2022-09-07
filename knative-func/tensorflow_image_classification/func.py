@@ -156,7 +156,7 @@ def request_handler(req: Request) -> str:
           "inference_latency(ms)" : latency
         }
         headers = { "content-type": "application/json" }
-        return json.dumps(data), 200, headers
+        return jsonify(data)
     elif req.method == "POST":
         print("request form: ", req.form)
         # print("request url: ", req.form.get('url'))
