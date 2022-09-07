@@ -11,7 +11,7 @@ import imghdr
 import numpy as np
 
 MODEL_NAME = 'resnet50'
-MODEL_PATH = 'resnet50_fp32_pretrained_model.pb'
+MODEL_PATH = 'models/resnet50_fp32_pretrained_model.pb'
 INPUTS = 'input'
 OUTPUTS = 'predict'
 RESNET_IMAGE_SIZE = 224
