@@ -1,5 +1,5 @@
 from parliament import Context
-from flask import Request
+from flask import Request, jsonify, make_response
 import datetime
 import tensorflow as tf
 from tensorflow.python.tools.optimize_for_inference_lib import optimize_for_inference
@@ -9,6 +9,7 @@ import utils
 import imagenet_preprocessing
 import imghdr
 import numpy as np
+import json
 
 MODEL_NAME = 'resnet50'
 MODEL_PATH = 'models/resnet50_fp32_pretrained_model.pb'
@@ -143,14 +144,19 @@ class image_classifier_optimized_graph:
 
     total_time = infer_time_consume + data_load_time
 
-    return predictions, total_time
+    return predictions, total_time.microseconds/1000
 
 def request_handler(req: Request) -> str:
     if req.method == "GET":
         graph = image_classifier_optimized_graph(1,MODEL_NAME,MODEL_PATH,TEST_INPUT_DATA,1,36)
-        predictions, inference_latency = graph.run()
+        predictions, latency = graph.run()
         predictions_lables = utils.get_top_predictions(predictions, False, 5)
-        return {'top_predictions': predictions_lables, 'inference_latency': inference_latency}, 200
+        data = {
+          "top_predictions" : predictions_lables, 
+          "inference_latency(ms)" : latency
+        }
+        headers = { "content-type": "application/json" }
+        return json.dumps(data), 200, headers
     elif req.method == "POST":
         print("request form: ", req.form)
         # print("request url: ", req.form.get('url'))
@@ -171,9 +177,7 @@ def main(context: Context):
     # Add your business logic here
     print("Received request")
     if 'request' in context.keys():
-        ret = request_handler(context.request)
-        print(ret, flush=True)
-        return ret, 200
+        return request_handler(context.request)
     else:
         print("Empty request", flush=True)
-        return "{}", 200
+        return "{}", 400
