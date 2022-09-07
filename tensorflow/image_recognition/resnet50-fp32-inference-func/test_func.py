@@ -1,5 +1,4 @@
 import unittest
-import json
 from parliament import Context
 from flask import Request
 func = __import__("func")
@@ -15,7 +14,7 @@ class TestFunc(unittest.TestCase):
     req = Request({
       "method": "GET",
     })
-    resp, code = func.inference_handler(req)
+    resp, code = func.request_handler(req)
     self.assertIsNotNone(resp)
     self.assertEqual(code, 200)
   

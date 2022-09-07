@@ -1,9 +1,9 @@
 specVersion: 0.25.0
-name: python-tensorflow
+name: python-tensorflow-image-recognation
 namespace: ""
 runtime: python
-registry: docker.io/chzhyang
-image: docker.io/chzhyang/python-tensorflow:latest
+registry: ""
+image: docker.io/chzhyang/python-tensorflow-image-recognation:latest
 imageDigest: ""
 build: local
 git: {}

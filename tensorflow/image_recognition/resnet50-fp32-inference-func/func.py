@@ -145,7 +145,7 @@ class image_classifier_optimized_graph:
 
     return predictions, total_time
 
-def inference_handler(req: Request) -> str:
+def request_handler(req: Request) -> str:
     if req.method == "GET":
         graph = image_classifier_optimized_graph(1,MODEL_NAME,MODEL_PATH,TEST_INPUT_DATA,1,36)
         predictions, inference_latency = graph.run()
@@ -153,15 +153,15 @@ def inference_handler(req: Request) -> str:
         return {'top_predictions': predictions_lables, 'inference_latency': inference_latency}, 200
     elif req.method == "POST":
         print("request form: ", req.form)
-        print("request url: ", req.form.get('url'))
+        # print("request url: ", req.form.get('url'))
         # input_url = req.form.get('url')
         #  todo: download url to data
-        input_data = ""
-        graph = image_classifier_optimized_graph(1,MODEL_NAME,MODEL_PATH,input_data,1,36)
-        predictions, inference_latency = graph.run()
-        predictions_lables = utils.get_top_predictions(predictions, False, 5)
-        return {'top_predictions': predictions_lables, 'inference_latency': inference_latency}
-
+        # input_data = ""
+        # graph = image_classifier_optimized_graph(1,MODEL_NAME,MODEL_PATH,input_data,1,36)
+        # predictions, inference_latency = graph.run()
+        # predictions_lables = utils.get_top_predictions(predictions, False, 5)
+        # return {'top_predictions': predictions_lables, 'inference_latency': inference_latency}
+        return "{}", 200
 def main(context: Context):
     """ 
     Function template
@@ -171,7 +171,7 @@ def main(context: Context):
     # Add your business logic here
     print("Received request")
     if 'request' in context.keys():
-        ret = inference_handler(context.request)
+        ret = request_handler(context.request)
         print(ret, flush=True)
         return ret, 200
     else:
