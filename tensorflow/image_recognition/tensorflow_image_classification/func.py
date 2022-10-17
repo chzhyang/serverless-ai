@@ -1,6 +1,5 @@
 import os
 import sys
-from parliament import Context
 from flask import Request, jsonify, make_response
 import time
 import tensorflow as tf

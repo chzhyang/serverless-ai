@@ -1,0 +1,23 @@
+FROM tensorflow/tensorflow:devel
+
+ENV http_proxy=http://proxy-dmz.intel.com:912
+ENV https_proxy=http://proxy-dmz.intel.com:912
+#ENV no_proxy="10.105.159.2,10.105.159.2,10.105.159.0/24,10.250.0.0/16,10.254.0.0/15,10.253.0.0/16,127.0.0.1,localhost,.svc,.pod,.cluster.local,.svc.cluster.local,.intel.com"
+
+RUN git clone https://github.com/tensorflow/tensorflow
+WORKDIR /tensorflow
+# RUN git fetch origin
+RUN git checkout r2.9
+
+WORKDIR /tensorflow
+
+# build tensorflow 2 with all isa support from source
+RUN yes "" | python configure.py
+RUN bazel build --config=opt --copt=-DONEDNN_ENABLE_PRIMITIVE_CPU_ISA=ALL\
+    --local_cpu_resources=HOST_CPUS*.5 //tensorflow/tools/pip_package:build_pip_package
+RUN ./bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/pip
+RUN  pip install --no-cache-dir /tmp/pip/tensorflow-2.9.0-cp38-cp38-linux_x86_64.whl
+RUN  rm -rf /root/.cache
+RUN  rm -rf /tensorflow
+RUN  rm -rf /tensorflow_src
+WORKDIR /
