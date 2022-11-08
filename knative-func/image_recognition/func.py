@@ -103,11 +103,11 @@ def run_inference(data_location, infer_graph, infer_sess):
 
   return predictions, total_time * 1000
 
-def request_handler(req: Request, infer_graph) -> str:
+def request_handler(req: Request, infer_graph, infer_sess) -> str:
   if req.method == "GET":
     # data = {}
     # graph = image_classifier(1,MODEL_NAME,MODEL_PATH,TEST_INPUT_DATA,1,36)
-    predictions, latency= run_inference(TEST_INPUT_DATA, infer_graph)
+    predictions, latency= run_inference(TEST_INPUT_DATA, infer_graph, infer_sess)
     predictions_lables = utils.get_top_predictions(predictions, False, 5)
     data = {
       "top_predictions" : predictions_lables, 
@@ -144,7 +144,7 @@ def main(context: Context):
   optimize_config()
   infer_graph, infer_sess = load_model(MODEL_PATH)
   if 'request' in context.keys():
-    return request_handler(context.request, infer_graph)
+    return request_handler(context.request, infer_graph, infer_sess)
   else:
     # test
     img_url = "https://raw.githubusercontent.com/chzhyang/faas-workloads/main/tensorflow/image_recognition/tensorflow_image_classification/data/ILSVRC2012_test_00000181.JPEG"
