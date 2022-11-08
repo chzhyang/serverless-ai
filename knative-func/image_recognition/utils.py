@@ -16,7 +16,9 @@ def download_image(img_url):
     img_data = requests.get(img_url)
     with open(img_filepath, 'wb') as f:
       f.write(img_data.content)
-  print("Download image to ", img_filepath, flush=True)
+    print("Download image to ", img_filepath, flush=True)
+  else:
+    print("Image exists")
   return img_filepath
 
 def get_top_predictions(results, ids_are_one_indexed=False, preds_to_print=5):
