@@ -1,7 +1,22 @@
 import json
+import os
 import numpy as np
+import requests
 
-LABELS_FILE = "data/labellist.json"
+INPUT_PATH = "./data/"
+LABELS_FILE = "./data/labellist.json"
+
+def download_image(img_url):
+  """Download image from URL to default filepath"""
+  if not os.path.exists(INPUT_PATH):
+      os.makedirs(INPUT_PATH)
+  img_name = img_url.split('/')[-1].split('.')[0]+'.jpg'
+  img_filepath = os.path.join(INPUT_PATH, img_name)
+  if not os.path.exists(img_filepath):
+    img_data = requests.get(img_url)
+    with open(img_filepath, 'wb') as f:
+      f.write(img_data.content)
+  return img_filepath
 
 def get_top_predictions(results, ids_are_one_indexed=False, preds_to_print=5):
   """Given an array of mode, graph_name, predicted_ID, print labels."""

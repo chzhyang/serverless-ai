@@ -20,8 +20,7 @@ INPUTS = 'input'
 OUTPUTS = 'predict'
 RESNET_IMAGE_SIZE = 224
 
-TEST_INPUT_DATA = './data/ILSVRC2012_test_00000181_1.JPEG'
-INPUT_PATH = './data/'
+TEST_IMAGE = './data/test.JPEG'
 
 # """Run standard ImageNet preprocessing on image file.
   # Args:
@@ -55,7 +54,7 @@ def data_preprocess(data_location, batch_size, output_height, output_width, num_
   return image_array_tensor
 
 def load_model(input_graph):
-  # Loade model
+  # Load model
   infer_graph = tf.Graph()
   with infer_graph.as_default():
     graph_def = tf.compat.v1.GraphDef()
@@ -82,20 +81,16 @@ def load_model(input_graph):
   return infer_graph, infer_sess
 
 def run_inference(data_location, infer_graph, infer_sess):
-  """run inference"""
-  # data_config, infer_config = optimize_graph_config()
-  print("Run inference...")
+  """Run inference"""
   data_graph = tf.Graph()
   with data_graph.as_default():
     if (data_location):
       images = data_preprocess(data_location, 1, RESNET_IMAGE_SIZE, RESNET_IMAGE_SIZE, 3)
   input_tensor = infer_graph.get_tensor_by_name('input:0')
   output_tensor = infer_graph.get_tensor_by_name('predict:0')
-
   data_sess = tf.compat.v1.Session(graph=data_graph)
-  
-  # start_time = time.time()
   image_np = data_sess.run(images)
+
   start_time = time.time()
   for i in range(2):
     predictions = infer_sess.run(output_tensor, feed_dict={input_tensor: image_np})
@@ -104,31 +99,20 @@ def run_inference(data_location, infer_graph, infer_sess):
   return predictions, total_time * 1000
 
 def request_handler(req: Request, infer_graph, infer_sess) -> str:
+  """Handle the request"""
   if req.method == "GET":
-    # data = {}
-    # graph = image_classifier(1,MODEL_NAME,MODEL_PATH,TEST_INPUT_DATA,1,36)
-    predictions, latency= run_inference(TEST_INPUT_DATA, infer_graph, infer_sess)
+    predictions, latency= run_inference(TEST_IMAGE, infer_graph, infer_sess)
     predictions_lables = utils.get_top_predictions(predictions, False, 5)
-    data = {
-      "top_predictions" : predictions_lables, 
+    result = {
+      "top5_predictions" : predictions_lables, 
       "inference_latency(ms)" : latency
     }
     # headers = { "content-type": "application/json" }
-    return jsonify(data)
+    return jsonify(result)
   elif req.method == "POST":
     img_url = req.form.get('imgURL')
-    print("image url: ", img_url)
-    # Download image from URL
-    if not os.path.exists(INPUT_PATH):
-      os.makedirs(INPUT_PATH)
-    input_name = img_url.split('/')[-1].split('.')[0]+'.jpg'
-    input_filepath = os.path.join(INPUT_PATH, input_name)
-    if not os.path.exists(input_filepath):
-      input_data = requests.get(img_url)
-      with open(input_filepath, 'wb') as f:
-        f.write(input_data.content)
-    # Run inference
-    predictions, latency = run_inference(input_filepath, infer_graph)
+    img_filepath = utils.download_image(img_url)
+    predictions, latency = run_inference(img_filepath, infer_graph, infer_sess)
     predictions_lables = utils.get_top_predictions(predictions, False, 5)
     result = {
       "top5_predictions" : predictions_lables, 
@@ -146,7 +130,7 @@ def main(context: Context):
   if 'request' in context.keys():
     return request_handler(context.request, infer_graph, infer_sess)
   else:
-    # test
+    # performance test
     img_url = "https://raw.githubusercontent.com/chzhyang/faas-workloads/main/tensorflow/image_recognition/tensorflow_image_classification/data/ILSVRC2012_test_00000181.JPEG"
     # Download image from URL
     if not os.path.exists(INPUT_PATH):
