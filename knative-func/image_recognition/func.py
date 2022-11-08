@@ -7,15 +7,15 @@ from parliament import Context
 from flask import Request, jsonify
 
 import tensorflow as tf
-from tensorflow.python.tools.optimize_for_inference_lib import optimize_for_inference
-from tensorflow.python.framework import dtypes
+# from tensorflow.python.tools.optimize_for_inference_lib import optimize_for_inference
+# from tensorflow.python.framework import dtypes
 
 import utils
 import imagenet_preprocessing
-
-MODEL_PATH = 'models/resnet50_fp32_pretrained_model.pb'
-INPUTS = 'input'
-OUTPUTS = 'predict'
+from image_recognition import infer_graph, infer_sess
+# MODEL_PATH = 'models/resnet50_fp32_pretrained_model.pb'
+# INPUTS = 'input'
+# OUTPUTS = 'predict'
 RESNET_IMAGE_SIZE = 224
 
 TEST_IMAGE = './data/test.JPEG'
@@ -32,17 +32,17 @@ TEST_IMAGE = './data/test.JPEG'
   # Raises:
   #   ValueError: if image is not a JPEG.
   # """
-def optimize_config():
-  # Get all physical cores
-  num_physical_cores = subprocess.getoutput('lscpu -b -p=Core,Socket | grep -v \'^#\' | sort -u | wc -l')
-  os.environ["KMP_BLOCKTIME"] = "1"
-  os.environ["KMP_SETTINGS"] = "1"
-  os.environ["KMP_AFFINITY"]= "granularity=fine,verbose,compact,1,0"
-  os.environ["OMP_NUM_THREADS"]= num_physical_cores
-  ### test
-  os.environ["ONEDNN_VERBOSE"]="0"
-  tf.config.threading.set_inter_op_parallelism_threads(1)
-  tf.config.threading.set_intra_op_parallelism_threads(int(num_physical_cores))
+# def optimize_config():
+#   # Get all physical cores
+#   num_physical_cores = subprocess.getoutput('lscpu -b -p=Core,Socket | grep -v \'^#\' | sort -u | wc -l')
+#   os.environ["KMP_BLOCKTIME"] = "1"
+#   os.environ["KMP_SETTINGS"] = "1"
+#   os.environ["KMP_AFFINITY"]= "granularity=fine,verbose,compact,1,0"
+#   os.environ["OMP_NUM_THREADS"]= num_physical_cores
+#   ### test
+#   os.environ["ONEDNN_VERBOSE"]="0"
+#   tf.config.threading.set_inter_op_parallelism_threads(1)
+#   tf.config.threading.set_intra_op_parallelism_threads(int(num_physical_cores))
 
 def data_preprocess(data_location, batch_size, output_height, output_width, num_channels=3):
   if imghdr.what(data_location) != "jpeg":
@@ -53,30 +53,30 @@ def data_preprocess(data_location, batch_size, output_height, output_width, num_
   image_array_tensor = tf.reshape(image_array, input_shape)
   return image_array_tensor
 
-def load_model(input_graph):
-  # Load model
-  infer_graph = tf.Graph()
-  with infer_graph.as_default():
-    graph_def = tf.compat.v1.GraphDef()
-    with tf.compat.v1.gfile.FastGFile(input_graph, 'rb') as input_file:
-      input_graph_content = input_file.read()
-      graph_def.ParseFromString(input_graph_content)
-      output_graph = optimize_for_inference(graph_def, [INPUTS], [OUTPUTS], dtypes.float32.as_datatype_enum, False)
-    tf.import_graph_def(output_graph, name='')
-  # Use random data to cache model
-  data_graph = tf.Graph()
-  with data_graph.as_default():
-    input_shape = [1, RESNET_IMAGE_SIZE, RESNET_IMAGE_SIZE, 3]
-    images = tf.random.uniform(input_shape, 0.0, 255.0, dtype=tf.float32, name='synthetic_images')
-  input_tensor = infer_graph.get_tensor_by_name('input:0')
-  output_tensor = infer_graph.get_tensor_by_name('predict:0')
+# def load_model(input_graph):
+#   # Load model
+#   infer_graph = tf.Graph()
+#   with infer_graph.as_default():
+#     graph_def = tf.compat.v1.GraphDef()
+#     with tf.compat.v1.gfile.FastGFile(input_graph, 'rb') as input_file:
+#       input_graph_content = input_file.read()
+#       graph_def.ParseFromString(input_graph_content)
+#       output_graph = optimize_for_inference(graph_def, [INPUTS], [OUTPUTS], dtypes.float32.as_datatype_enum, False)
+#     tf.import_graph_def(output_graph, name='')
+#   # Use random data to cache model
+#   data_graph = tf.Graph()
+#   with data_graph.as_default():
+#     input_shape = [1, RESNET_IMAGE_SIZE, RESNET_IMAGE_SIZE, 3]
+#     images = tf.random.uniform(input_shape, 0.0, 255.0, dtype=tf.float32, name='synthetic_images')
+#   input_tensor = infer_graph.get_tensor_by_name('input:0')
+#   output_tensor = infer_graph.get_tensor_by_name('predict:0')
 
-  data_sess = tf.compat.v1.Session(graph=data_graph)
-  infer_sess = tf.compat.v1.Session(graph=infer_graph)
+#   data_sess = tf.compat.v1.Session(graph=data_graph)
+#   infer_sess = tf.compat.v1.Session(graph=infer_graph)
   
-  image_np = data_sess.run(images)
-  infer_sess.run(output_tensor, feed_dict={input_tensor: image_np})
-  return infer_graph, infer_sess
+#   image_np = data_sess.run(images)
+#   infer_sess.run(output_tensor, feed_dict={input_tensor: image_np})
+#   return infer_graph, infer_sess
 
 def run_inference(data_location, infer_graph, infer_sess):
   """Run inference"""
@@ -128,7 +128,7 @@ def request_handler(req: Request, infer_graph, infer_sess) -> str:
     result = {
       "top5_predictions" : predictions_lables, 
       "inference_latency(ms)" : latency,
-      "total_time(ms)": total_time
+      "total_time(ms)": total_time * 1000
     }
     # headers = { "content-type": "application/json" }
     print(result, flush=True)
@@ -147,7 +147,7 @@ def request_handler(req: Request, infer_graph, infer_sess) -> str:
     result = {
       "top5_predictions" : predictions_lables, 
       "inference_latency(ms)" : latency,
-      "total_time(ms)": total_time
+      "total_time(ms)": total_time * 1000
     }
     # headers = { "content-type": "application/json" }
     print(result, flush=True)
@@ -157,8 +157,8 @@ def main(context: Context):
   """
   Image classifier with optimized TensorFlow graph
   """
-  optimize_config()
-  infer_graph, infer_sess = load_model(MODEL_PATH)
+  # optimize_config()
+  # infer_graph, infer_sess = load_model(MODEL_PATH)
   print("##########   Ready for inference   ##########", flush=True)
   if 'request' in context.keys():
     return request_handler(context.request, infer_graph, infer_sess)
