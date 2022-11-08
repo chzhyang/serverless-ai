@@ -16,13 +16,13 @@ def download_image(img_url):
     img_data = requests.get(img_url)
     with open(img_filepath, 'wb') as f:
       f.write(img_data.content)
+  print("Download image to ", img_filepath, flush=True)
   return img_filepath
 
 def get_top_predictions(results, ids_are_one_indexed=False, preds_to_print=5):
-  """Given an array of mode, graph_name, predicted_ID, print labels."""
+  """Given an array of mode, graph_name, predicted_ID, print labels"""
   labels = get_labels()
 
-  print("Predictions:")
   predictions = []
   for result in results:
     pred_ids = top_predictions(result, preds_to_print)
@@ -31,15 +31,15 @@ def get_top_predictions(results, ids_are_one_indexed=False, preds_to_print=5):
   return predictions
 
 def get_labels():
-  """Get the set of possible labels for classification."""
+  """Get the set of possible labels for classification"""
   with open(LABELS_FILE, "r") as labels_file:
     labels = json.load(labels_file)
 
   return labels
 
 def top_predictions(result, n):
-  """Get the top n predictions given the array of softmax results."""
-  # We only care about the first example.
+  """Get the top n predictions given the array of softmax results"""
+  # Only care about the first example.
   probabilities = result
   # Get the ids of most probable labels. Reverse order to get greatest first.
   ids = np.argsort(probabilities)[::-1]
@@ -57,6 +57,6 @@ def get_labels_for_ids(labels, ids, ids_are_one_indexed=False):
   Returns:
     list of category labels
   """
-  for x in ids:
-    print(x, "=", labels[str(x + int(ids_are_one_indexed))])
+  # for x in ids:
+  #   print(x, "=", labels[str(x + int(ids_are_one_indexed))], flush=True)
   return [labels[str(x + int(ids_are_one_indexed))] for x in ids]
