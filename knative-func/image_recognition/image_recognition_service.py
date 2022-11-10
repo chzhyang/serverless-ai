@@ -8,18 +8,16 @@ import image_preprocess
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import dtypes
-from tensorflow.python.tools.optimize_for_inference_lib import \
-    optimize_for_inference
+from tensorflow.python.tools.optimize_for_inference_lib import optimize_for_inference
 
 RESNET_IMAGE_SIZE = 224
 INPUTS = 'input'
 OUTPUTS = 'predict'
-
 class ImageRecognitionService():
   def __init__(self, model_path, lables_path):
-    self._optimized_config()
     self.model_path = model_path
     self.lables_path = lables_path
+    self._optimized_config()
     self.infer_graph, self.infer_sess = self._load_model()
     self.input_tensor = self.infer_graph.get_tensor_by_name('input:0')
     self.output_tensor = self.infer_graph.get_tensor_by_name('predict:0')
@@ -28,14 +26,14 @@ class ImageRecognitionService():
 
   def _optimized_config(self):
     # Get all physical cores
-    num_physical_cores = subprocess.getoutput('lscpu -b -p=Core,Socket | grep -v \'^#\' | sort -u | wc -l')
+    num_cores = subprocess.getoutput('lscpu -b -p=Core,Socket | grep -v \'^#\' | sort -u | wc -l')
     os.environ["KMP_BLOCKTIME"] = "1"
     os.environ["KMP_SETTINGS"] = "1"
     os.environ["KMP_AFFINITY"]= "granularity=fine,verbose,compact,1,0"
-    os.environ["OMP_NUM_THREADS"]= num_physical_cores
+    os.environ["OMP_NUM_THREADS"]= num_cores
     
     tf.config.threading.set_inter_op_parallelism_threads(1)
-    tf.config.threading.set_intra_op_parallelism_threads(int(num_physical_cores))
+    tf.config.threading.set_intra_op_parallelism_threads(int(num_cores))
 
   def _load_model(self):
     # Load model
