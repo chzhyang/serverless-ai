@@ -32,10 +32,9 @@ def request_handler(req: Request, svc) -> str:
   if req.method == "GET":
     start_time = time.time()
     predictions, data_time, infer_time= svc.run_inference(TEST_IMAGE)
-    predictions_lables = svc.get_top_predictions(predictions, False, 5)
     total_time = time.time()-start_time
     result = {
-      "top5_predictions": predictions_lables, 
+      "top5_predictions": predictions, 
       "data_latency(ms)": data_time,
       "inference_latency(ms)": infer_time,
       "total_time(ms)": total_time * 1000
@@ -49,9 +48,8 @@ def request_handler(req: Request, svc) -> str:
     img_filepath = download_image(img_url, DATA_DIR)
     predictions, data_time, infer_time = svc.run_inference(img_filepath)
     total_time = time.time()-start_time
-    predictions_lables = svc.get_top_predictions(predictions, False, 5)
     result = {
-      "top5_predictions": predictions_lables, 
+      "top5_predictions": predictions, 
       "data_latency(ms)": data_time,
       "inference_latency(ms)": infer_time,
       "total_time(ms)": total_time * 1000
