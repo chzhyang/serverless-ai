@@ -1,11 +1,10 @@
 import imghdr
 import json
 import os
-from pathlib import Path
 import subprocess
 import time
 
-import imagenet_preprocessing
+import image_preprocess
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import dtypes
@@ -69,7 +68,7 @@ class ImageRecognitionService():
       if imghdr.what(data_location) != "jpeg":
             raise ValueError("At this time, only JPEG images are supported, please try another image.")
       image_buffer = tf.io.read_file(data_location)
-      image_array = imagenet_preprocessing.preprocess_image(image_buffer, output_height, output_width, num_channels)
+      image_array = image_preprocess.preprocess_image(image_buffer, output_height, output_width, num_channels)
       input_shape = [batch_size, output_height, output_width, num_channels]
       images = tf.reshape(image_array, input_shape)
     data_sess = tf.compat.v1.Session(graph=data_graph)

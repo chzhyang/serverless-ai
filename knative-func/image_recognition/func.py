@@ -9,7 +9,7 @@ import image_recognition_service
 DATA_DIR = Path(__file__).resolve().parent / 'data'
 TEST_IMAGE = os.path.join(DATA_DIR, 'test.JPEG')
 MODEL_PATH = os.path.join(DATA_DIR, 'resnet50_fp32_pretrained_model.pb')
-LABELS_PATH = Path(__file__).resolve().parent / 'data'/ 'labellist.json'
+LABELS_PATH = os.path.join(DATA_DIR, 'labellist.json')
 SERVICE = image_recognition_service.ImageRecognitionService(MODEL_PATH, LABELS_PATH)
 
 def download_image(img_url, img_dir):
