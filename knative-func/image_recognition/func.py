@@ -6,11 +6,11 @@ from flask import Request, jsonify
 from pathlib import Path
 import image_recognition_service
 
-MODEL_FP32 = "resnet50_fp32_pretrained_model.pb"
+MODEL_FP32 = "resnet50_v1_5_fp32.pb"
 MODEL_BF16 = "resnet50_v1_5_bfloat16.pb"
 DATA_DIR = Path(__file__).resolve().parent / 'data'
 TEST_IMAGE = os.path.join(DATA_DIR, 'test.JPEG')
-MODEL_PATH = os.path.join(DATA_DIR, MODEL_BF16)
+MODEL_PATH = os.path.join(DATA_DIR, MODEL_FP32)
 LABELS_PATH = os.path.join(DATA_DIR, 'labellist.json')
 SERVICE = image_recognition_service.ImageRecognitionService(MODEL_PATH, LABELS_PATH)
 
