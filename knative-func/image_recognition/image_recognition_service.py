@@ -11,8 +11,8 @@ from tensorflow.python.framework import dtypes
 from tensorflow.python.tools.optimize_for_inference_lib import optimize_for_inference
 
 RESNET_IMAGE_SIZE = 224
-INPUTS = 'input'
-OUTPUTS = 'predict'
+INPUTS = 'input_tensor'
+OUTPUTS = 'softmax_tensor'
 NUM_TOP_PREDICTIONS = 5
 
 _R_MEAN = 123.68
@@ -27,8 +27,8 @@ class ImageRecognitionService():
     self.lables_path = lables_path
     self._optimized_config()
     self.infer_graph, self.infer_sess = self._load_model()
-    self.input_tensor = self.infer_graph.get_tensor_by_name('input:0')
-    self.output_tensor = self.infer_graph.get_tensor_by_name('predict:0')
+    self.input_tensor = self.infer_graph.get_tensor_by_name('input_tensor:0')
+    self.output_tensor = self.infer_graph.get_tensor_by_name('softmax_tensor:0')
     self._cache_model()
     print("Ready for inference...", flush=True)
 
