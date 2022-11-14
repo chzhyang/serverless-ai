@@ -9,9 +9,9 @@ class TestFunc(unittest.TestCase):
   def test_func_empty_request(self):
     resp = func.main({})
     self.assertEqual(resp, "{}")
-    self.assertEqual(code, 400)
+    self.assertEqual(code, 200)
   
-  def test_func_post_request(self):
+  def test_func_gets_request(self):
     builder = EnvironBuilder(method="GET")
     req = builder.get_request()
     resp, code = func.main(Context(req))

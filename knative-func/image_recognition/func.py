@@ -66,4 +66,4 @@ def main(context: Context):
     return request_handler(context.request, SERVICE)
   else:
     print("Empty request", flush=True)
-    return "{}", 400
+    return "{}", 200
