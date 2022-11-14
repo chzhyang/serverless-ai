@@ -12,7 +12,9 @@ from tensorflow.python.tools.optimize_for_inference_lib import optimize_for_infe
 
 RESNET_IMAGE_SIZE = 224
 INPUTS = 'input_tensor'
+INPUT_TENSOR = 'input_tensor:0'
 OUTPUTS = 'softmax_tensor'
+OUTPUT_TENSOR = 'softmax_tensor:0'
 NUM_TOP_PREDICTIONS = 5
 
 class ImageRecognitionService():
@@ -21,13 +23,13 @@ class ImageRecognitionService():
     self.lables_path = lables_path
     self._optimized_config()
     self.infer_graph, self.infer_sess = self._load_model()
-    self.input_tensor = self.infer_graph.get_tensor_by_name('input_tensor:0')
-    self.output_tensor = self.infer_graph.get_tensor_by_name('softmax_tensor:0')
+    self.input_tensor = self.infer_graph.get_tensor_by_name(INPUT_TENSOR)
+    self.output_tensor = self.infer_graph.get_tensor_by_name(OUTPUT_TENSOR)
     self._cache_model()
     print("Ready for inference...", flush=True)
 
   def _optimized_config(self):
-    # Get the number of all physical cores
+    # Get all physical cores
     num_cores = subprocess.getoutput('lscpu -b -p=Core,Socket | grep -v \'^#\' | sort -u | wc -l')
     
     os.environ["KMP_BLOCKTIME"] = "1"
@@ -87,8 +89,9 @@ class ImageRecognitionService():
 
   def _top_predictions(self, result, n):
     """Get the top n predictions given the array of softmax results"""
+    # Only care about the first example
     probabilities = result
-    # Get the ids of most probable labels. Reverse order to get greatest first.
+    # Get the ids of most probable labels. Reverse order to get greatest first
     ids = np.argsort(probabilities)[::-1]
     
     return ids[:n]
