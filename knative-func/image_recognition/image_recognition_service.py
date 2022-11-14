@@ -27,6 +27,7 @@ class ImageRecognitionService():
     print("Ready for inference...", flush=True)
 
   def _optimized_config(self):
+    # Get the number of all physical cores
     num_cores = subprocess.getoutput('lscpu -b -p=Core,Socket | grep -v \'^#\' | sort -u | wc -l')
     
     os.environ["KMP_BLOCKTIME"] = "1"

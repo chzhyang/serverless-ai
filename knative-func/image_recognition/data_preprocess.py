@@ -6,7 +6,7 @@ _B_MEAN = 103.94
 CHANNEL_MEANS = [_R_MEAN, _G_MEAN, _B_MEAN]
 RESIZE_MIN = 256
 
-def central_crop(image, crop_height, crop_width):
+def _central_crop(image, crop_height, crop_width):
   """Performs central crops of the given image list"""
   shape = tf.shape(input=image)
   height, width = shape[0], shape[1]
@@ -17,7 +17,7 @@ def central_crop(image, crop_height, crop_width):
   crop_left = amount_to_be_cropped_w // 2
   return tf.slice(image, [crop_top, crop_left, 0], [crop_height, crop_width, -1])
 
-def mean_image_subtraction(image, means, num_channels):
+def _mean_image_subtraction(image, means, num_channels):
   """Subtracts the given means from each image channel"""
   if image.get_shape().ndims != 3:
     raise ValueError('Input must be of size [height, width, C>0]')
@@ -45,7 +45,7 @@ def _smallest_size_at_least(height, width, resize_min):
 
   return new_height, new_width
 
-def image_resize(image, resize_min):
+def _image_resize(image, resize_min):
   """Resize images preserving the original aspect ratio"""
   shape = tf.shape(input=image)
   height, width = shape[0], shape[1]
@@ -58,8 +58,8 @@ def image_resize(image, resize_min):
 def image_preprocess(image_buffer, output_height, output_width, num_channels):
   """Preprocesses the given image, includes decoding, cropping, and resizing"""
   image = tf.image.decode_jpeg(image_buffer, channels=num_channels)
-  image = image_preprocess.image_resize(image, RESIZE_MIN)
-  image = image_preprocess.central_crop(image, output_height, output_width)
+  image = _image_resize(image, RESIZE_MIN)
+  image = _central_crop(image, output_height, output_width)
   image.set_shape([output_height, output_width, num_channels])
-  image = image_preprocess.mean_image_subtraction(image, CHANNEL_MEANS, num_channels)
+  image = _mean_image_subtraction(image, CHANNEL_MEANS, num_channels)
   return image
