@@ -1,29 +1,78 @@
-# Python HTTP Function
+# HTTP Function for Image Recognition Inference with TensorFlow
 
-Welcome to your new Python function project! The boilerplate function
-code can be found in [`func.py`](./func.py). This function will respond
-to incoming HTTP GET and POST requests.
+This sample project shows a HTTP function(`func.py`) for real-time image recognition inference 
+with TensorFlow on a pretrained model(ResNet50). The function will respond to incoming HTTP GET and POST requests.
+
+The function is based on two modules:
+- `image_recognition_service.py` contains a class(`ImageRecognitionService`) for image recognition inference with optimized TensorFlow
+- `data_preprocess.py` contains serveral functions for data preprocess
 
 ## Endpoints
 
 Running this function will expose three endpoints.
 
-  * `/` The endpoint for your function.
-  * `/health/readiness` The endpoint for a readiness health check
-  * `/health/liveness` The endpoint for a liveness health check
-
-The health checks can be accessed in your browser at
-[http://localhost:8080/health/readiness]() and
-[http://localhost:8080/health/liveness]().
-
-You can use `func invoke` to send an HTTP request to the function endpoint.
-
+  - `/` The endpoint for inference.
+    - A GET request will receive a response with the inference result of a test image(data/test.JPEG)
+    - A POST request should contain a image URL in JSON format(`{'imgURL':'your custom URL'}`), the client will receive a response with the inference result of the image
+  - `/health/readiness` The endpoint for a readiness health check
+  - `/health/liveness` The endpoint for a liveness health check
 
 ## Testing
 
-This function project includes a [unit test](./test_func.py). Update this
-as you add business logic to your function in order to test its behavior.
+This function project includes three test functions in [unit test](./test_func.py):
+- test GET request
+- test POST request
+- test empty request
 
-```console
-python test_func.py
+```bash
+$ python test_func.py
+```
+## Build and run locally
+
+Prerequirements:
+- [func](https://github.com/knative/func) is installed
+
+```bash
+$ cd .../func-tastic/tensorflow/image_recognition
+$ func build
+$ func run
+  🙌 Function image built: docker.io/myrepo/tensorflow-image_recognition:latest
+Detected function was already built.  Use --build to override this behavior.
+Function started on port 8080
+...
+Ready for inference... 
+```
+
+## Function invocation
+
+Invoke by `func invoke`
+
+```bash
+$ func invoke
+{'predictions': [['king penguin, Aptenodytes patagonica', 'bow tie, bow-tie, bowtie', 'maillot, tank suit', 'pillow', 'window screen']]}
+
+$ func invoke --data '{"imgURL": "https://raw.githubusercontent.com/chzhyang/faas-workloads/main/tensorflow/image_recognition/tensorflow_image_classification/data/ILSVRC2012_test_00000181.JPEG"}'
+{'predictions': [['king penguin, Aptenodytes patagonica', 'bow tie, bow-tie, bowtie', 'maillot, tank suit', 'pillow', 'window screen']]}
+```
+
+Invoke by `curl`
+
+```bash
+$ curl -X POST http://127.0.0.1:8080 \ 
+-H "Content-Type: application/json"  \ 
+-d '{"imgURL": "https://raw.githubusercontent.com/chzhyang/faas-workloads/main/tensorflow/image_recognition/tensorflow_image_classification/data/ILSVRC2012_test_00000181.JPEG"}'
+{'predictions': [['king penguin, Aptenodytes patagonica', 'bow tie, bow-tie, bowtie', 'maillot, tank suit', 'pillow', 'window screen']]}
+```
+
+
+## Deploy into cluster
+
+This command will build and deploy the function into cluster.
+
+## Cleanup
+
+To remove the deployed function from your cluster, run:
+
+```shell
+func delete
 ```

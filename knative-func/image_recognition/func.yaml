@@ -1,8 +1,8 @@
 specVersion: 0.34.0
-name: tensorflow-image-recognation
+name: tensorflow-image_recognation
 runtime: python
 registry: ""
-image: docker.io/chzhyang/tensorflow-image-recognation:latest
+image: docker.io/chzhyang/tensorflow-image_recognation:latest
 imageDigest: ""
 created: 2022-09-07T03:02:20.229105274Z
 invocation:

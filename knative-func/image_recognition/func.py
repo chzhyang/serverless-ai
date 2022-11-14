@@ -6,11 +6,11 @@ from flask import Request, json
 from pathlib import Path
 import image_recognition_service
 
-MODEL_NAME = "resnet50_v1_5_fp32.pb"
+PRETRAINED_MODEL = "resnet50_v1_5_fp32.pb"
 DATA_DIR = Path(__file__).resolve().parent / 'data'
 # A local image used for handling GET request
 TEST_IMAGE = os.path.join(DATA_DIR, 'test.JPEG')
-MODEL_PATH = os.path.join(DATA_DIR, MODEL_NAME)
+MODEL_PATH = os.path.join(DATA_DIR, PRETRAINED_MODEL)
 # Labels used for mapping inference results to human-readable predictions
 LABELS_PATH = os.path.join(DATA_DIR, 'labellist.json')
 # Number of top human-readable predictions
@@ -46,15 +46,22 @@ def request_handler(req: Request, svc) -> str:
     return json.dumps(result), 200
   elif req.method == "POST":
     # Inference from a image url in POST request, download the image firstly, then run inference
-    data = req.get_json()
-    img_url = data["imgURL"]
-    img_filepath = download_image(img_url, DATA_DIR)
-    predictions, data_time, infer_time = svc.run_inference(img_filepath, LABELS_PATH, NUM_TOP_PREDICTIONS)
-    result = {
-      "top_predictions": predictions
-    }
-    print(result, flush=True)
-    return json.dumps(result), 200
+    if not req.is_json:
+        raise BadRequest(description="only JSON body allowed")
+    try:
+      data = req.get_json()
+      img_url = data["imgURL"]
+      img_filepath = download_image(img_url, DATA_DIR)
+      predictions, data_time, infer_time = svc.run_inference(img_filepath, LABELS_PATH, NUM_TOP_PREDICTIONS)
+      result = {
+        "top_predictions": predictions
+      }
+      print(result, flush=True)
+      return json.dumps(result), 200
+    except KeyError:
+        raise BadRequest(description='missing imgURL in body')
+    except Exception as e:
+        raise InternalServerError(original_exception=e)
 
 def main(context: Context):
   """
