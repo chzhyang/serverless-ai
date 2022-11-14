@@ -4,7 +4,7 @@ import os
 import subprocess
 import time
 
-import image_preprocess
+import data_preprocess
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import dtypes
@@ -14,12 +14,6 @@ RESNET_IMAGE_SIZE = 224
 INPUTS = 'input_tensor'
 OUTPUTS = 'softmax_tensor'
 NUM_TOP_PREDICTIONS = 5
-
-_R_MEAN = 123.68
-_G_MEAN = 116.78
-_B_MEAN = 103.94
-CHANNEL_MEANS = [_R_MEAN, _G_MEAN, _B_MEAN]
-RESIZE_MIN = 256
 
 class ImageRecognitionService():
   def __init__(self, model_path, lables_path):
@@ -75,17 +69,11 @@ class ImageRecognitionService():
       if imghdr.what(data_location) != "jpeg":
             raise ValueError("At this time, only JPEG images are supported, please try another image.")
       image_buffer = tf.io.read_file(data_location)
-      # image_array = image_preprocess.preprocess_image(image_buffer, output_height, output_width, num_channels)
-      # Decoding, cropping, and resizing the image
-      image = tf.image.decode_jpeg(image_buffer, channels=num_channels)
-      image = image_preprocess.image_resize(image, RESIZE_MIN)
-      image = image_preprocess.central_crop(image, output_height, output_width)
-      image.set_shape([output_height, output_width, num_channels])
-      image = image_preprocess.mean_image_subtraction(image, CHANNEL_MEANS, num_channels)
+      image = data_preprocess.image_preprocess(image_buffer, output_height, output_width, num_channels)
       input_shape = [batch_size, output_height, output_width, num_channels]
       images = tf.reshape(image, input_shape)
-    data_sess = tf.compat.v1.Session(graph=data_graph)
-    image_np = data_sess.run(images)
+      data_sess = tf.compat.v1.Session(graph=data_graph)
+      image_np = data_sess.run(images)
 
     return image_np
 
@@ -121,15 +109,9 @@ class ImageRecognitionService():
 
   def run_inference(self, data_location):
     """Run inference from given image, returns human-readable predictions"""
-    start_time = time.time()
     image_np = self._data_preprocess(data_location, 1, RESNET_IMAGE_SIZE, RESNET_IMAGE_SIZE, 3)
-    data_time = time.time() - start_time
-
-    start_time = time.time()
     predictions = self.infer_sess.run(self.output_tensor, feed_dict={self.input_tensor: image_np})
-    infer_time = (time.time() - start_time)
-
     predictions_labels = self._get_top_predictions(predictions, False, NUM_TOP_PREDICTIONS)
 
-    return predictions_labels, data_time * 1000, infer_time * 1000
+    return predictions_labels
 
