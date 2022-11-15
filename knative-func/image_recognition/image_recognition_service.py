@@ -221,7 +221,7 @@ class ImageRecognitionService():
         data_sess = tf.compat.v1.Session(graph=data_graph)
         image = data_sess.run(images)
 
-        return images
+        return image
 
     def run_inference(self, data_location, lables_path, num_top_preds):
         """
@@ -231,7 +231,7 @@ class ImageRecognitionService():
 
         """
         image = self._data_preprocess(
-            data_location, 1, RESNET_IMAGE_SIZE, RESNET_IMAGE_SIZE, NUM_CHANNELS, 1)
+            data_location, RESNET_IMAGE_SIZE, RESNET_IMAGE_SIZE, NUM_CHANNELS, 1)
         predictions = self.infer_sess.run(self.output_tensor, feed_dict={
                                           self.input_tensor: image})
         predictions_labels = self._get_top_predictions(

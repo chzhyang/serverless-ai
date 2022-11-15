@@ -24,15 +24,16 @@ SERVICE = image_recognition_service.ImageRecognitionService(MODEL_PATH)
 
 def download_image(img_url, img_dir):
     """Download the image to target path if it doesn't exist"""
-    img_name = img_url.split('/')[-1]
+    if not os.path.exists(img_dir):
+        os.makedirs(img_dir)
+    img_name = img_url.split('/')[-1].split('.')[0]+'.jpg'
     img_filepath = os.path.join(img_dir, img_name)
+    print("#img_filepath: ", img_filepath, flush=True)
     if not os.path.exists(img_filepath):
-        if not os.path.exists(img_dir):
-            os.makedirs(img_dir)
         img_data = request.get(img_url)
         with open(img_filepath, 'wb') as f:
             f.write(img_data.content)
-            print("Download image to ", img_filepath, flush=True)
+        print("Download image to ", img_filepath, flush=True)
     else:
         print("Image exists: ", img_filepath)
     return img_filepath
@@ -51,12 +52,16 @@ def request_handler(req: Request, svc) -> str:
         return json.dumps(result)
     elif req.method == "POST":
         # Inference from a image url in POST request, download the image firstly, then run inference
+        print("#1", flush=True)
         if not req.is_json:
             raise BadRequest(description="only JSON body allowed")
         try:
+            print("#2", flush=True)
             data = req.get_json()
             img_url = data["imgURL"]
+            print("#3: ", img_url, flush=True)
             img_filepath = download_image(img_url, DATA_DIR)
+            print("#4", flush=True)
             predictions = svc.run_inference(
                 img_filepath, LABELS_PATH, NUM_TOP_PREDICTIONS)
             result = {

@@ -39,29 +39,32 @@ $ func run
   🙌 Function image built: docker.io/myrepo/tensorflow-image_recognition:latest
 Detected function was already built.  Use --build to override this behavior.
 Function started on port 8080
+Load model...
+...
+Cache model...
 ...
 Ready for inference... 
 ```
 
 ## Function invocation
 
-Invoke by `func invoke`
+Invoke using `func invoke`
 
 ```bash
-$ func invoke
-{'predictions': [['king penguin, Aptenodytes patagonica', 'bow tie, bow-tie, bowtie', 'maillot, tank suit', 'pillow', 'window screen']]}
-
 $ func invoke --data '{"imgURL": "https://raw.githubusercontent.com/chzhyang/faas-workloads/main/tensorflow/image_recognition/tensorflow_image_classification/data/ILSVRC2012_test_00000181.JPEG"}'
-{'predictions': [['king penguin, Aptenodytes patagonica', 'bow tie, bow-tie, bowtie', 'maillot, tank suit', 'pillow', 'window screen']]}
+{"top_predictions": [["king penguin, Aptenodytes patagonica", "drake", "albatross, mollymawk", "toucan", "guenon, guenon monkey"]]}
 ```
 
-Invoke by `curl`
+Invoke using `curl`
 
 ```bash
-$ curl -X POST http://127.0.0.1:8080 \ 
--H "Content-Type: application/json"  \ 
+curl http://127.0.0.1:8080
+{"top_predictions": [["king penguin, Aptenodytes patagonica", "drake", "albatross, mollymawk", "toucan", "guenon, guenon monkey"]]}
+
+$ curl -X POST http://127.0.0.1:8080 \
+-H "Content-Type: application/json"  \
 -d '{"imgURL": "https://raw.githubusercontent.com/chzhyang/faas-workloads/main/tensorflow/image_recognition/tensorflow_image_classification/data/ILSVRC2012_test_00000181.JPEG"}'
-{'predictions': [['king penguin, Aptenodytes patagonica', 'bow tie, bow-tie, bowtie', 'maillot, tank suit', 'pillow', 'window screen']]}
+{"top_predictions": [["king penguin, Aptenodytes patagonica", "drake", "albatross, mollymawk", "toucan", "guenon, guenon monkey"]]}
 ```
 
 
