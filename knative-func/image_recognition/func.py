@@ -1,7 +1,7 @@
 import os
 from http.client import BAD_REQUEST
 from pathlib import Path
-from urllib import request
+import requests
 import image_recognition_service
 from flask import Request, json
 from parliament import Context
@@ -26,11 +26,10 @@ def download_image(img_url, img_dir):
     """Download the image to target path if it doesn't exist"""
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
-    img_name = img_url.split('/')[-1].split('.')[0]+'.jpg'
+    img_name = img_url.split('/')[-1]
     img_filepath = os.path.join(img_dir, img_name)
-    print("#img_filepath: ", img_filepath, flush=True)
     if not os.path.exists(img_filepath):
-        img_data = request.get(img_url)
+        img_data = requests.get(img_url)
         with open(img_filepath, 'wb') as f:
             f.write(img_data.content)
         print("Download image to ", img_filepath, flush=True)
@@ -51,28 +50,24 @@ def request_handler(req: Request, svc) -> str:
         print(result, flush=True)
         return json.dumps(result)
     elif req.method == "POST":
-        # Inference from a image url in POST request, download the image firstly, then run inference
-        print("#1", flush=True)
+        # Download the image, then run inference
         if not req.is_json:
             raise BadRequest(description="only JSON body allowed")
         try:
-            print("#2", flush=True)
             data = req.get_json()
             img_url = data["imgURL"]
-            print("#3: ", img_url, flush=True)
             img_filepath = download_image(img_url, DATA_DIR)
-            print("#4", flush=True)
             predictions = svc.run_inference(
                 img_filepath, LABELS_PATH, NUM_TOP_PREDICTIONS)
             result = {
                 "top_predictions": predictions
             }
             print(result, flush=True)
-            return json.dumps(result)
         except KeyError:
-            raise BAD_REQUEST(description='missing imgURL in body')
+            raise BAD_REQUEST(description='missing imgURL in JSON')
         except Exception as e:
             raise InternalServerError(original_exception=e)
+        return json.dumps(result)
 
 
 def main(context: Context):

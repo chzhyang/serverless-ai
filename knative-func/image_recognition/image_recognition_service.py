@@ -9,7 +9,7 @@ from tensorflow.python.framework import dtypes
 from tensorflow.python.tools.optimize_for_inference_lib import \
     optimize_for_inference
 
-# Basic information of the pretrained Resnet50 model
+# Basic info for loading pretrained model(ResNet50)
 RESNET_IMAGE_SIZE = 224
 INPUTS = 'input_tensor'
 INPUT_TENSOR = 'input_tensor:0'
@@ -17,6 +17,7 @@ OUTPUTS = 'softmax_tensor'
 OUTPUT_TENSOR = 'softmax_tensor:0'
 NUM_CHANNELS = 3
 
+# Basic info for data preprocessing
 _R_MEAN = 123.68
 _G_MEAN = 116.78
 _B_MEAN = 103.94
@@ -96,24 +97,6 @@ class ImageRecognitionService():
         image_np = data_sess.run(images)
         self.infer_sess.run(self.output_tensor, feed_dict={
                             self.input_tensor: image_np})
-
-    # def _data_preprocess(self, data_location, batch_size, output_height, output_width, num_channels):
-    #     """Read the image, then process it to a 3-D tensor for tensorflow"""
-    #     data_graph = tf.Graph()
-    #     with data_graph.as_default():
-    #         if imghdr.what(data_location) != "jpeg":
-    #             raise ValueError(
-    #                 "At this time, only JPEG images are supported, please try another image.")
-    #         image_buffer = tf.io.read_file(data_location)
-    #         image = data_preprocess.image_preprocess(
-    #             image_buffer, output_height, output_width, num_channels)
-    #         input_shape = [batch_size, output_height,
-    #                        output_width, num_channels]
-    #         images = tf.reshape(image, input_shape)
-    #     data_sess = tf.compat.v1.Session(graph=data_graph)
-    #     image = data_sess.run(images)
-
-    #     return image
 
     def _get_labels(self, lables_path):
         """Get the set of possible labels for classification"""
@@ -198,7 +181,7 @@ class ImageRecognitionService():
 
         return resized_image
 
-    def _data_preprocess(self, data_location, output_height, output_width, num_channels, batch_size):
+    def _data_preprocessing(self, data_location, output_height, output_width, num_channels, batch_size):
         """
         Read the image, then process it to a 3-D tensor for tensorflow, 
         includes decoding, cropping, and resizing.
@@ -228,9 +211,8 @@ class ImageRecognitionService():
         Read and preprocess the image, returns human-readable predictions.
         Preprocess the image to tensor which can be accepted by tensorflow, 
         then run inference, and get human-readable predictions lastly.
-
         """
-        image = self._data_preprocess(
+        image = self._data_preprocessing(
             data_location, RESNET_IMAGE_SIZE, RESNET_IMAGE_SIZE, NUM_CHANNELS, 1)
         predictions = self.infer_sess.run(self.output_tensor, feed_dict={
                                           self.input_tensor: image})

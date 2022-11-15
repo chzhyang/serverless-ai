@@ -1,10 +1,10 @@
 specVersion: 0.34.0
-name: tensorflow-image_recognation
+name: tensorflow-image-recognition
 runtime: python
-registry: ebuild
-image: docker.io/chzhyang/tensorflow-image_recognation:latest
+registry: docker.io/chzhyang
+image: docker.io/chzhyang/tensorflow-image-recognition:latest
 imageDigest: ""
-created: 2022-09-07T03:02:20.229105274Z
+created: 2022-11-15T03:02:20.229105274Z
 invocation:
   format: http
 build:
@@ -15,7 +15,7 @@ run:
   volumes: []
   envs: []
 deploy:
-  namespace: ""
+  namespace: default
   annotations: {}
   options: {}
   labels: []

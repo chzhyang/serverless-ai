@@ -1,11 +1,9 @@
 # HTTP Function for Image Recognition Inference with TensorFlow
 
-This sample project shows a HTTP function(`func.py`) for real-time image recognition inference 
-with TensorFlow on a pretrained model(ResNet50). The function will respond to incoming HTTP GET and POST requests.
+This sample project shows an HTTP function for real-time image recognition inference 
+with TensorFlow on a pretrained model(ResNet50).
 
-The function is based on two modules:
-- `image_recognition_service.py` contains a class(`ImageRecognitionService`) for image recognition inference with optimized TensorFlow
-- `data_preprocess.py` contains serveral functions for data preprocess
+The function(`func.py`) is based on class `ImageRecognitionService`(`image_recognition_service.py`). This class contains a class() several functions for data preprocessing, running inference and inference result parsing with optimized TensorFlow.
 
 ## Endpoints
 
@@ -13,7 +11,7 @@ Running this function will expose three endpoints.
 
   - `/` The endpoint for inference.
     - A GET request will receive a response with the inference result of a test image(data/test.JPEG)
-    - A POST request should contain a image URL in JSON format(`{'imgURL':'your custom URL'}`), the client will receive a response with the inference result of the image
+    - A POST request should contain an image URL in JSON format(`{'imgURL':'your custom URL'}`), and the client will receive a response with the inference result of the image
   - `/health/readiness` The endpoint for a readiness health check
   - `/health/liveness` The endpoint for a liveness health check
 
@@ -29,7 +27,7 @@ $ python test_func.py
 ```
 ## Build and run locally
 
-Prerequirements:
+Requirements:
 - [func](https://github.com/knative/func) is installed
 
 ```bash
@@ -68,9 +66,20 @@ $ curl -X POST http://127.0.0.1:8080 \
 ```
 
 
-## Deploy into cluster
+## Deploy into a cluster
 
-This command will build and deploy the function into cluster.
+This command will build and deploy the function into the Knative cluster.
+
+Requirements:
+- [func](https://github.com/knative/func) is installed
+- [Knative](https://knative.dev/docs/) is installed
+
+```bash
+$ func deploy --registry <registry>
+    🙌 Function image built: <registry>/tensorflow-image-recognition:latest
+    ✅ Function deployed in namespace "default" and exposed at URL:
+    http://tensorflow-image-recognition.default.example.com
+```
 
 ## Cleanup
 
