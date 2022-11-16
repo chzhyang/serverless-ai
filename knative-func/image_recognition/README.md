@@ -3,15 +3,15 @@
 This sample project shows an HTTP function for real-time image recognition inference 
 with TensorFlow on a pretrained model(ResNet50).
 
-The function(`func.py`) is based on class `ImageRecognitionService`(`image_recognition_service.py`). This class contains a class() several functions for data preprocessing, running inference and inference result parsing with optimized TensorFlow.
+The function(`func.py`) is based on class `ImageRecognitionService`(`image_recognition_service.py`). This class defines several functions for data preprocessing, running inference and inference result parsing using optimized TensorFlow.
 
 ## Endpoints
 
 Running this function will expose three endpoints.
 
   - `/` The endpoint for inference.
-    - A GET request will receive a response with the inference result of a test image(data/test.JPEG)
-    - A POST request should contain an image URL in JSON format(`{'imgURL':'your custom URL'}`), and the client will receive a response with the inference result of the image
+    - GET request will receive a response with the inference result of a test image(data/test.JPEG)
+    - POST request need to give an image URL in JSON format(`{'imgURL':'your custom URL'}`), and the response will give human-read inference result of the image
   - `/health/readiness` The endpoint for a readiness health check
   - `/health/liveness` The endpoint for a liveness health check
 
@@ -46,14 +46,14 @@ Ready for inference...
 
 ## Function invocation
 
-Invoke using `func invoke`
+- Send POST request using `func invoke`
 
 ```bash
 $ func invoke --data '{"imgURL": "https://raw.githubusercontent.com/chzhyang/faas-workloads/main/tensorflow/image_recognition/tensorflow_image_classification/data/ILSVRC2012_test_00000181.JPEG"}'
 {"top_predictions": [["king penguin, Aptenodytes patagonica", "drake", "albatross, mollymawk", "toucan", "guenon, guenon monkey"]]}
 ```
 
-Invoke using `curl`
+- Send GET and POST request using `curl`
 
 ```bash
 curl http://127.0.0.1:8080
@@ -66,9 +66,7 @@ $ curl -X POST http://127.0.0.1:8080 \
 ```
 
 
-## Deploy into a cluster
-
-This command will build and deploy the function into the Knative cluster.
+## Deploy funtion into Knative cluster
 
 Requirements:
 - [func](https://github.com/knative/func) is installed
@@ -85,6 +83,6 @@ $ func deploy --registry <registry>
 
 To remove the deployed function from your cluster, run:
 
-```shell
+```bash
 func delete
 ```
