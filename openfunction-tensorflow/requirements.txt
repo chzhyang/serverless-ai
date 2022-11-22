@@ -1,0 +1,4 @@
+functions-framework==1.4.3
+markupsafe==2.0.1
+--index-url=https://pypi.python.org/simple
+intel-tensorflow==2.9.1
