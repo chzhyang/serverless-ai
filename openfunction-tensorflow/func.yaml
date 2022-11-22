@@ -23,4 +23,11 @@ spec:
     template:
       containers:
         - name: function # DO NOT change this
-          imagePullPolicy: IfNotPresent 
+          imagePullPolicy: IfNotPresent
+    scaleOptions:
+      # valid for both sync and async functions
+      # minReplicas: 1
+      # valid for Knative sync function
+      knative:
+        autoscaling.knative.dev/min-scale: "1"
+      # autoscaling.knative.dev/max-scale: "10"
