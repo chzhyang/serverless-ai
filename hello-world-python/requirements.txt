@@ -1,2 +1,0 @@
-functions-framework==1.4.3
-markupsafe==2.0.1

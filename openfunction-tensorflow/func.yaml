@@ -4,20 +4,20 @@ metadata:
   name: tensorflow-sample
 spec:
   version: "v1.0.0"
-  image: "chzhyang/func-tensorflow-resnet50:v1"
+  image: "chzhyang/func-tensorflow-resnet50:v3"
   imageCredentials:
     name: push-secret
   port: 8080 # default to 8080
-  build:
-    builder: "openfunction/gcp-builder:v1"
-    env:
-      GOOGLE_FUNCTION_TARGET: "handler"
-      GOOGLE_FUNCTION_SIGNATURE_TYPE: "http"
-      GOOGLE_FUNCTION_SOURCE: "main.py"
-    srcRepo:
-      url: "https://github.com/OpenFunction/samples.git"
-      sourceSubPath: "functions/knative/hello-world-python"
-      revision: "main"
+  # build:
+  #   builder: "openfunction/gcp-builder:v1"
+  #   env:
+  #     GOOGLE_FUNCTION_TARGET: "handler"
+  #     GOOGLE_FUNCTION_SIGNATURE_TYPE: "http"
+  #     GOOGLE_FUNCTION_SOURCE: "main.py"
+  #   srcRepo:
+  #     url: "https://github.com/chzhyang/faas-workloads.git"
+  #     sourceSubPath: "openfunction-tensorflow"
+  #     revision: "main"
   serving:
     runtime: knative # default to knative
     template:

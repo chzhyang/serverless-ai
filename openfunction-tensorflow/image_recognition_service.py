@@ -77,9 +77,10 @@ class ImageRecognitionService():
                 graph_def.ParseFromString(input_graph_content)
 
             # Optimize the model for inference
-            output_graph = optimize_for_inference(
-                graph_def, [INPUTS], [OUTPUTS], dtypes.float32.as_datatype_enum, False)
-            tf.import_graph_def(output_graph, name='')
+            # output_graph = optimize_for_inference(
+            #     graph_def, [INPUTS], [OUTPUTS], dtypes.float32.as_datatype_enum, False)
+            # tf.import_graph_def(output_graph, name='')
+            tf.import_graph_def(graph_def, name='')
         infer_sess = tf.compat.v1.Session(graph=infer_graph)
 
         return infer_graph, infer_sess
