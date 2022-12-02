@@ -1,30 +1,23 @@
-apiVersion: core.openfunction.io/v1beta1
-kind: Function
-metadata:
-  name: tf-sample
-spec:
-  version: "v1.0.0"
-  image: "chzhyang/of-tf-sample:v1" # SVC init(delete optimize, add time cost) before main
-  # image: chzhyang/http-test:v1 # serivce init(delete optimize and cache) in main before get/post 
-  imageCredentials:
-    name: push-secret
-  port: 8080 # default to 8080
-  build:
-    builder: "openfunction/gcp-builder:v1"
-    env:
-      GOOGLE_FUNCTION_TARGET: "handler"
-      GOOGLE_FUNCTION_SIGNATURE_TYPE: "http"
-      GOOGLE_FUNCTION_SOURCE: "main.py"
-    srcRepo:
-      url: "https://github.com/chzhyang/faas-workloads.git"
-      sourceSubPath: "of-tf"
-      revision: "main"
-  serving:
-    runtime: knative # default to knative
-    template:
-      containers:
-        - name: function # DO NOT change this
-          imagePullPolicy: IfNotPresent
-    scaleOptions:
-      knative:
-        autoscaling.knative.dev/min-scale: "1" 
+specVersion: 0.35.0
+name: ""
+runtime: ""
+registry: ""
+image: docker.io/chzhyang/of-tf-http-tastic:v1
+imageDigest: ""
+created: 0001-01-01T00:00:00Z
+build:
+  builderImages:
+    pack: gcr.io/paketo-buildpacks/builder
+  buildpacks: []
+  builder: pack
+  buildEnvs: []
+run:
+  volumes: []
+  envs: []
+deploy:
+  namespace: ""
+  remote: false
+  annotations: {}
+  options: {}
+  labels: []
+  healthEndpoints: {}

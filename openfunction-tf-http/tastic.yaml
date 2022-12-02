@@ -1,0 +1,13 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: tf-tastic
+  namespace: default
+  annotations:
+        autoscaling.knative.dev/min-scale: "1"
+spec:
+  template:
+    spec:
+      containers:
+        - image: chzhyang/test:latest
+          imagePullPolicy: IfNotPresent
