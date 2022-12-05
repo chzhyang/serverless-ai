@@ -3,11 +3,12 @@ kind: Service
 metadata:
   name: tf-tastic
   namespace: default
-  annotations:
-        autoscaling.knative.dev/min-scale: "1"
 spec:
   template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/min-scale: "1"
     spec:
       containers:
-        - image: chzhyang/test:latest
+        - image: chzhyang/of-tf-http-tastic:v1
           imagePullPolicy: IfNotPresent

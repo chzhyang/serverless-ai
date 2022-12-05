@@ -7,10 +7,10 @@ ENV APP_HOME /app
 ENV PYTHONUNBUFFERED TRUE
 
 WORKDIR $APP_HOME
-COPY data $APP_HOME/data
-COPY main_tastic.py $APP_HOME/func.py
-COPY image_recognition_service.py $APP_HOME/image_recognition_service.py
-COPY requirements-tastic.txt $APP_HOME/requirements.txt
+COPY openfunction-tensorflow/data $APP_HOME/data
+COPY openfunction-tf-http/func.py $APP_HOME/func.py
+COPY openfunction-tf-http/image_recognition_service.py $APP_HOME/image_recognition_service.py
+COPY openfunction-tf-http/requirements-tastic.txt $APP_HOME/requirements.txt
 
 # Install production dependencies.
 RUN pip install -r requirements.txt

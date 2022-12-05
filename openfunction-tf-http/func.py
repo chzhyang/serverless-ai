@@ -73,7 +73,7 @@ def request_handler(request: Request, svc) -> str:
             "top_predictions": predictions
         }
         print(result, flush=True)
-        return json.dumps(result), 200
+        return json.dumps(result)
     elif request.method == "POST":
         print("Get a POST...", flush=True)
         # Download the image, then run inference
@@ -89,7 +89,7 @@ def request_handler(request: Request, svc) -> str:
                 "top_predictions": predictions
             }
             print(result, flush=True)
-            return json.dumps(result), 200
+            return json.dumps(result)
         except KeyError:
             raise BAD_REQUEST(description='missing imgURL in JSON')
         except Exception as e:
