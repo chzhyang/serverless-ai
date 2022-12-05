@@ -1,23 +1,23 @@
 apiVersion: core.openfunction.io/v1beta1
 kind: Function
 metadata:
-  name: http-test
+  name: tf-tastic
 spec:
   version: "v1.0.0"
-  image: "chzhyang/http-test:v1"
+  image: "chzhyang/of-tf-http-tastic:v1"
   imageCredentials:
     name: push-secret
   port: 8080 # default to 8080
-  build:
-    builder: "openfunction/gcp-builder:v1"
-    env:
-      GOOGLE_FUNCTION_TARGET: "handler"
-      GOOGLE_FUNCTION_SIGNATURE_TYPE: "http"
-      GOOGLE_FUNCTION_SOURCE: "main.py"
-    srcRepo:
-      url: "https://github.com/chzhyang/faas-workloads.git"
-      sourceSubPath: "hello-world-python"
-      revision: "main"
+  # build:
+  #   builder: "openfunction/gcp-builder:v1"
+  #   env:
+  #     GOOGLE_FUNCTION_TARGET: "handler"
+  #     GOOGLE_FUNCTION_SIGNATURE_TYPE: "http"
+  #     GOOGLE_FUNCTION_SOURCE: "main.py"
+  #   srcRepo:
+  #     url: "https://github.com/chzhyang/faas-workloads.git"
+  #     sourceSubPath: "of-tf"
+  #     revision: "main"
   serving:
     runtime: knative # default to knative
     template:

@@ -1,0 +1,278 @@
+k get pods serving-pm4sf-ksvc-czjbc-v100-deployment-d8579dfdc-khdbg -o yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    autoscaling.knative.dev/min-scale: "1"
+    autoscaling.knative.dev/minScale: "1"
+    cni.projectcalico.org/containerID: bb56db3c6f4307d7a817f68a0daefaa535c2f41101adbc5970060e17ad4386d8
+    cni.projectcalico.org/podIP: 192.168.76.200/32
+    cni.projectcalico.org/podIPs: 192.168.76.200/32
+    serving.knative.dev/creator: system:serviceaccount:openfunction:openfunction-controller-manager
+  creationTimestamp: "2022-11-28T06:03:06Z"
+  generateName: serving-pm4sf-ksvc-czjbc-v100-deployment-d8579dfdc-
+  labels:
+    app: serving-pm4sf-ksvc-czjbc-v100
+    app.kubernetes.io/version: v1.0.0
+    openfunction.io/serving: serving-pm4sf
+    pod-template-hash: d8579dfdc
+    serving.knative.dev/configuration: serving-pm4sf-ksvc-czjbc
+    serving.knative.dev/configurationGeneration: "1"
+    serving.knative.dev/configurationUID: 01d28afe-f46d-4b21-a00b-6f159dd1353b
+    serving.knative.dev/revision: serving-pm4sf-ksvc-czjbc-v100
+    serving.knative.dev/revisionUID: 392d6b4a-c8d4-49cd-90da-06188af8a8d6
+    serving.knative.dev/service: serving-pm4sf-ksvc-czjbc
+    serving.knative.dev/serviceUID: 522420b8-58e4-4afc-9516-93547930e77c
+  name: serving-pm4sf-ksvc-czjbc-v100-deployment-d8579dfdc-khdbg
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: serving-pm4sf-ksvc-czjbc-v100-deployment-d8579dfdc
+    uid: ef551a14-fc51-4d8c-9046-780db3223cff
+  resourceVersion: "100383560"
+  uid: fa6fe0fd-7062-4681-9fb0-9baeb929f2c7
+spec:
+  containers:
+  - env:
+    - name: FUNC_CONTEXT
+      value: '{"name":"tensorflow-sample","version":"v1.0.0","runtime":"Knative","port":"8080","pluginsTracing":{"enabled":false,"provider":{"name":"skywalking","oapServer":"localhost:xxx"},"tags":{"func":"function-with-tracing","layer":"faas","tag1":"value1","tag2":"value2"},"baggage":{"key":"sw8-correlation","value":"base64(string
+        key):base64(string value),base64(string key2):base64(string value2)"}}}'
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: POD_NAMESPACE
+      value: default
+    - name: PORT
+      value: "8080"
+    - name: K_REVISION
+      value: serving-pm4sf-ksvc-czjbc-v100
+    - name: K_CONFIGURATION
+      value: serving-pm4sf-ksvc-czjbc
+    - name: K_SERVICE
+      value: serving-pm4sf-ksvc-czjbc
+    image: index.docker.io/chzhyang/func-tensorflow-resnet50@sha256:7ca92ac1907ead81f3c22bb5780361cdf7efc8d0b97ac6fa44cd2bb0bd532716
+    imagePullPolicy: IfNotPresent
+    lifecycle:
+      preStop:
+        httpGet:
+          path: /wait-for-drain
+          port: 8022
+          scheme: HTTP
+    name: function
+    ports:
+    - containerPort: 8080
+      name: user-port
+      protocol: TCP
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-mrtrs
+      readOnly: true
+  - env:
+    - name: SERVING_NAMESPACE
+      value: default
+    - name: SERVING_SERVICE
+      value: serving-pm4sf-ksvc-czjbc
+    - name: SERVING_CONFIGURATION
+      value: serving-pm4sf-ksvc-czjbc
+    - name: SERVING_REVISION
+      value: serving-pm4sf-ksvc-czjbc-v100
+    - name: QUEUE_SERVING_PORT
+      value: "8012"
+    - name: CONTAINER_CONCURRENCY
+      value: "0"
+    - name: REVISION_TIMEOUT_SECONDS
+      value: "300"
+    - name: SERVING_POD
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: SERVING_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: SERVING_LOGGING_CONFIG
+    - name: SERVING_LOGGING_LEVEL
+    - name: SERVING_REQUEST_LOG_TEMPLATE
+      value: '{"httpRequest": {"requestMethod": "{{.Request.Method}}", "requestUrl":
+        "{{js .Request.RequestURI}}", "requestSize": "{{.Request.ContentLength}}",
+        "status": {{.Response.Code}}, "responseSize": "{{.Response.Size}}", "userAgent":
+        "{{js .Request.UserAgent}}", "remoteIp": "{{js .Request.RemoteAddr}}", "serverIp":
+        "{{.Revision.PodIP}}", "referer": "{{js .Request.Referer}}", "latency": "{{.Response.Latency}}s",
+        "protocol": "{{.Request.Proto}}"}, "traceId": "{{index .Request.Header "X-B3-Traceid"}}"}'
+    - name: SERVING_ENABLE_REQUEST_LOG
+      value: "false"
+    - name: SERVING_REQUEST_METRICS_BACKEND
+      value: prometheus
+    - name: TRACING_CONFIG_BACKEND
+      value: none
+    - name: TRACING_CONFIG_ZIPKIN_ENDPOINT
+    - name: TRACING_CONFIG_DEBUG
+      value: "false"
+    - name: TRACING_CONFIG_SAMPLE_RATE
+      value: "0.1"
+    - name: USER_PORT
+      value: "8080"
+    - name: SYSTEM_NAMESPACE
+      value: knative-serving
+    - name: METRICS_DOMAIN
+      value: knative.dev/internal/serving
+    - name: SERVING_READINESS_PROBE
+      value: '{"tcpSocket":{"port":8080,"host":"127.0.0.1"},"successThreshold":1}'
+    - name: ENABLE_PROFILING
+      value: "false"
+    - name: SERVING_ENABLE_PROBE_REQUEST_LOG
+      value: "false"
+    - name: METRICS_COLLECTOR_ADDRESS
+    - name: CONCURRENCY_STATE_ENDPOINT
+    - name: CONCURRENCY_STATE_TOKEN_PATH
+      value: /var/run/secrets/tokens/state-token
+    - name: HOST_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
+    - name: ENABLE_HTTP2_AUTO_DETECTION
+      value: "false"
+    image: openfunction/knative.dev-serving-cmd-queue:v1.3.2
+    imagePullPolicy: IfNotPresent
+    name: queue-proxy
+    ports:
+    - containerPort: 8022
+      name: http-queueadm
+      protocol: TCP
+    - containerPort: 9090
+      name: http-autometric
+      protocol: TCP
+    - containerPort: 9091
+      name: http-usermetric
+      protocol: TCP
+    - containerPort: 8012
+      name: queue-port
+      protocol: TCP
+    readinessProbe:
+      failureThreshold: 3
+      httpGet:
+        httpHeaders:
+        - name: K-Network-Probe
+          value: queue
+        path: /
+        port: 8012
+        scheme: HTTP
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 1
+    resources:
+      requests:
+        cpu: 25m
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - all
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-mrtrs
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: false
+  imagePullSecrets:
+  - name: push-secret
+  nodeName: jfz1r01h18
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 300
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: kube-api-access-mrtrs
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2022-11-28T06:03:06Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2022-11-28T06:03:46Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2022-11-28T06:03:46Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2022-11-28T06:03:06Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: containerd://0542103e41e4bd746be047cc5b5bc614a762dab4143b4846df5d1d67100163eb
+    image: sha256:4cca7174ebee36d1d1026a0b1249c483ff35a21cd3c1ec090f3adc6e019ebebb
+    imageID: docker.io/chzhyang/func-tensorflow-resnet50@sha256:7ca92ac1907ead81f3c22bb5780361cdf7efc8d0b97ac6fa44cd2bb0bd532716
+    lastState: {}
+    name: function
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2022-11-28T06:03:38Z"
+  - containerID: containerd://437f0d1b05469d6a1ff38fdfdd0b1998360e16c8c777509667fa350de15e2b30
+    image: docker.io/openfunction/knative.dev-serving-cmd-queue:v1.3.2
+    imageID: docker.io/openfunction/knative.dev-serving-cmd-queue@sha256:2249dc873059c0dfc0783bce5f614a0d8ada3d4499d63aa1dffd19f2788ba64b
+    lastState: {}
+    name: queue-proxy
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2022-11-28T06:03:38Z"
+  hostIP: 172.16.9.61
+  phase: Running
+  podIP: 192.168.76.200
+  podIPs:
+  - ip: 192.168.76.200
+  qosClass: Burstable
+  startTime: "2022-11-28T06:03:06Z"
