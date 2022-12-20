@@ -1,12 +1,11 @@
 import os
 import json
-from http.client import BAD_REQUEST
 from pathlib import Path
 import requests
 import image_recognition_service
-from flask import Request, json
 from parliament import Context
-from werkzeug.exceptions import BadRequest, InternalServerError, HTTPException
+import boto3
+import ceph_s3
 
 PRETRAINED_MODEL = "resnet50_v1_5_fp32.pb"
 DATA_DIR = Path(__file__).resolve().parent / 'data'
@@ -22,26 +21,16 @@ NUM_TOP_PREDICTIONS = 5
 # Init the image recognition service class
 SERVICE = image_recognition_service.ImageRecognitionService(MODEL_PATH)
 
-# event info
-BUCKET = "fish"
+# s3 connection
+BUCKET_NAME = "fish"
 AWS_REGION = "my-store"
 EVENT_NAME = "ObjectCreated:Put"
 
-def download_image(img_url, img_dir):
-    """Download the image to target path if it doesn't exist"""
-    if not os.path.exists(img_dir):
-        os.makedirs(img_dir)
-    img_name = img_url.split('/')[-1]
-    img_filepath = os.path.join(img_dir, img_name)
-    if not os.path.exists(img_filepath):
-        img_data = requests.get(img_url)
-        with open(img_filepath, 'wb') as f:
-            f.write(img_data.content)
-        print("Download image to ", img_filepath, flush=True)
-    else:
-        print("Image exists: ", img_filepath)
-    return img_filepath
+ACCESS_KEY = "Y51LDIT65ZN41VVLKG0H"
+SECRET_KEY = "GOxbWKx5NunhlAt3xTvDUh3uHP04A6Cv3UFEwdGS"
+ENDPOINT_URL = "http://rook-ceph-rgw-my-store:80"
 
+S3 = ceph_s3.CephS3(ENDPOINT_URL, ACCESS_KEY, SECRET_KEY)
 
 def main(context: Context):
     """
@@ -51,9 +40,10 @@ def main(context: Context):
         data_json = context.cloud_event.data
         data_dict = json.loads(data_json)
         if data_dict["awsRegion"] == AWS_REGION and data_dict["eventName"] = EVENT_NAME:
-            key = data_dict["s3"]["object"]["key"]
+            object_key = data_dict["s3"]["object"]["key"]
             # TODO: get object from ceph
-            image = None
+            file_bytes = S3.download_s3_file(BUCKET_NAME, object_key)
+            print(file_bytes.getvalue())
             # TODO: inference from bytes not file
             predictions = svc.run_inference(
                 img_filepath, LABELS_PATH, NUM_TOP_PREDICTIONS)
