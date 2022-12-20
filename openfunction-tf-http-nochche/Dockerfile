@@ -10,7 +10,6 @@ WORKDIR $APP_HOME
 COPY data $APP_HOME/data
 COPY main.py $APP_HOME/main.py
 COPY image_recognition_service.py $APP_HOME/image_recognition_service.py
-# COPY service.py $APP_HOME/image_recognition_service.py
 
 COPY requirements.txt $APP_HOME/requirements.txt
 

@@ -53,12 +53,12 @@ class ImageRecognitionService():
         self.input_tensor = self.infer_graph.get_tensor_by_name(INPUT_TENSOR)
         self.output_tensor = self.infer_graph.get_tensor_by_name(OUTPUT_TENSOR)
 
-        # start = datetime.now()
-        # print("Start cache: ", start, flush=True)
-        # self._cache_model()
-        # end = datetime.now()
-        # print("End cache: ", end, flush=True)
-        # print("Cache time(s): ", (end - start).microseconds/1000000, flush=True)
+        start = datetime.now()
+        print("Start cache: ", start, flush=True)
+        self._cache_model()
+        end = datetime.now()
+        print("End cache: ", end, flush=True)
+        print("Cache time(s): ", (end - start).microseconds/1000000, flush=True)
 
         print("No cache, Ready for inference...", flush=True)
 
@@ -120,10 +120,12 @@ class ImageRecognitionService():
                            RESNET_IMAGE_SIZE, NUM_CHANNELS]
             images = tf.random.uniform(
                 input_shape, 0.0, 255.0, dtype=tf.float32, name='synthetic_images')
-        data_sess = tf.compat.v1.Session(graph=data_graph)
-        image_np = data_sess.run(images)
-        self.infer_sess.run(self.output_tensor, feed_dict={
-                            self.input_tensor: image_np})
+        with tf.compat.v1.Session(graph=data_graph) as data_sess:
+            image_np = data_sess.run(images)
+            with tf.compat.v1.Session(graph=self.infer_graph) as infer_sess:
+                predictions = infer_sess.run(self.output_tensor, feed_dict={self.input_tensor: image_np})
+                predictions_labels = self._get_top_predictions(predictions, "./data/labellist.json", False, 5)
+                print("Cache result: ", predictions_labels, flush=True)
 
     def _get_labels(self, lables_path):
         """Get the set of possible labels for classification"""

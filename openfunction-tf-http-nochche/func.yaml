@@ -4,7 +4,7 @@ metadata:
   name: tf-http-nochache
 spec:
   version: "v1.0.0"
-  image: "chzhyang/of-tf-http-nochache:v2"
+  image: "chzhyang/of-tf-http-nochache:v3"
   # imageCredentials:
   #   name: push-secret
   port: 8080 # default to 8080
