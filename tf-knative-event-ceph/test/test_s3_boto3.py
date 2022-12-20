@@ -2,6 +2,7 @@ import os
 import json
 import boto3
 from io import BytesIO
+from pathlib import Path
 
 PRETRAINED_MODEL = "resnet50_v1_5_fp32.pb"
 DATA_DIR = Path(__file__).resolve().parent / 'data'
@@ -23,7 +24,7 @@ EVENT_NAME = "ObjectCreated:Put"
 
 ACCESS_KEY = "Y51LDIT65ZN41VVLKG0H"
 SECRET_KEY = "GOxbWKx5NunhlAt3xTvDUh3uHP04A6Cv3UFEwdGS"
-ENDPOINT_URL = "http://rook-ceph-rgw-my-store:80"
+ENDPOINT_URL = "http://10.110.230.223:80"
 
 class CephS3():
     def __init__(self, endpoint_url, access_key, secret_key):
@@ -33,19 +34,31 @@ class CephS3():
                                     aws_secret_access_key=secret_key)
 
     def get_bucket(self, bucket_name):
-        return s3_conn.Bucket(bucket_name)
+        return self.s3_conn.Bucket(bucket_name)
     
-    def download_s3_file(self, bucket_name, object_key):
+    def download_s3_file(self, bucket, object_key):
         data = BytesIO()
-        bucket = self.get_bucket(bucket_name)
         bucket.download_fileobj(Fileobj=data, Key=object_key)
         return data
 
 def main():
-    S3 = ceph_s3.CephS3(ENDPOINT_URL, ACCESS_KEY, SECRET_KEY)
-    object_key = test3.txt
-    file_bytes = S3.download_s3_file(BUCKET_NAME, object_key)
+    S3 = CephS3(ENDPOINT_URL, ACCESS_KEY, SECRET_KEY)
+    bucket = S3.get_bucket(BUCKET_NAME)
+
+    print("test download file to bytes")
+    object_key = 'test3.txt'
+    file_bytes = S3.download_s3_file(bucket, object_key)
     print(file_bytes.getvalue())
+
+    print("test upload file to bucket")
+    up_file_path = Path(__file__).resolve().parent / 'requirements.txt'
+    bucket.upload_file(Filename=up_file_path,
+                       Key='requirements.txt')
+
+    print("test list object")
+    response = S3.list_objects_v2(Bucket=BUCKET_NAME)
+    for item in response['Contents']:
+        print(item['Key'])
 
 if __name__ == '__main__':
     main()
