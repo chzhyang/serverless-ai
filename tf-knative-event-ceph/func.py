@@ -26,7 +26,7 @@ EVENT_NAME = "ObjectCreated:Put"
 
 ACCESS_KEY = "Y51LDIT65ZN41VVLKG0H"
 SECRET_KEY = "GOxbWKx5NunhlAt3xTvDUh3uHP04A6Cv3UFEwdGS"
-ENDPOINT_URL = "http://rook-ceph-rgw-my-store:80"
+ENDPOINT_URL = "http://10.110.230.223:80"
 
 S3 = boto3.client(
     's3',
@@ -34,21 +34,26 @@ S3 = boto3.client(
     aws_access_key_id=ACCESS_KEY,
     aws_secret_access_key=SECRET_KEY)
 
+# event count
+EVENT_COUNT = 0
+
 
 def main(context: Context):
     """
     Image recognition inference with optimized TensorFlow
     """
     if context.cloud_event.data != None:
+        EVENT_COUNT = EVENT_COUNT + 1
+        print("Event number: ", EVENT_COUNT, flush=True)
         data_json = context.cloud_event.data
-        print(data_json, flush=True)
+        # print(data_json, flush=True)
         data_dict = json.loads(data_json)
         if data_dict["awsRegion"] == AWS_REGION and data_dict["eventName"] == EVENT_NAME:
             object_key = data_dict["s3"]["object"]["key"]
             print("Object key: ", object_key)
             file_path = Path(__file__).resolve().parent / 'data' / object_key
             if not os.path.exists(file_path):
-                print("Download file from s3 bucket", flush=True)
+                print("Download file from s3", flush=True)
                 S3.download_file(BUCKET_NAME, object_key, file_path)
                 if not os.path.exists(file_path):
                     print("Failed to download ", file_path)

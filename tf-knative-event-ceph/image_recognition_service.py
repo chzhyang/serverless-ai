@@ -61,15 +61,6 @@ class ImageRecognitionService():
 
         print("Ready for inference...", flush=True)
 
-        print("Test run infer ", flush=True)
-        start = datetime.now()
-        print("Start infer: ", start, flush=True)
-        predictions = self.run_inference(
-            "./data/test.JPEG", "./data/labellist.json", 5)
-        end = datetime.now()
-        print("End infer: ", end, flush=True)
-        print("Infer time(s): ", (end-start).microseconds/1000000, flush=True)
-
     def _optimized_config(self):
         """TensorFlow configuration settings"""
         # Get all physical cores
@@ -213,13 +204,11 @@ class ImageRecognitionService():
         includes decoding, cropping, and resizing.
         """
         data_graph = tf.Graph()
-        print("4", flush=True)
         with data_graph.as_default():
             if imghdr.what(data_location) != "jpeg":
                 raise ValueError(
                     "At this time, only JPEG images are supported, please try another image.")
             image_buffer = tf.io.read_file(data_location)
-            print("3", flush=True)
             image = tf.image.decode_jpeg(image_buffer, channels=num_channels)
             image = self._image_resize(image, RESIZE_MIN)
             image = self._central_crop(image, output_height, output_width)
@@ -229,16 +218,8 @@ class ImageRecognitionService():
             input_shape = [batch_size, output_height,
                            output_width, num_channels]
             images = tf.reshape(image, input_shape)
-            # images = tf.compat.v1.reshape(image, input_shape)
-            print("2", flush=True)
             data_sess = tf.compat.v1.Session(graph=data_graph)
-            print("1 ", flush=True)
-            # coord = tf.compat.v1.train.Coordinator()  # 创建一个协调器，管理线程
-            # threads = tf.compat.v1.train.start_queue_runners(
-            #     data_sess, coord)  # 启动QueueRunner, 此时文件名队列已经进队
             image = data_sess.run(images)
-            # coord.join(threads)
-            print("0 ", flush=True)
         return image
 
     def run_inference(self, data_location, lables_path, num_top_preds):
@@ -247,13 +228,13 @@ class ImageRecognitionService():
         Preprocess the image to tensor which can be accepted by tensorflow, 
         then run inference, and get human-readable predictions lastly.
         """
-        print("Goto data_preprocessing()", flush=True)
+        # print("Goto data_preprocessing()", flush=True)
         image = self._data_preprocessing(
             data_location, RESNET_IMAGE_SIZE, RESNET_IMAGE_SIZE, NUM_CHANNELS, 1)
-        print("Goto run()", flush=True)
+        # print("Goto run()", flush=True)
         predictions = self.infer_sess.run(self.output_tensor, feed_dict={
                                           self.input_tensor: image})
-        print("Goto get_top_predictions()", flush=True)
+        # print("Goto get_top_predictions()", flush=True)
         predictions_labels = self._get_top_predictions(
             predictions, lables_path, False, num_top_preds)
 
