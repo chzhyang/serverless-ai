@@ -7,11 +7,11 @@ ENV APP_HOME /app
 ENV PYTHONUNBUFFERED TRUE
 
 WORKDIR $APP_HOME
-COPY test_s3.py $APP_HOME/test_s3.py
+COPY test_s3_boto3.py $APP_HOME/test.py
 COPY requirements.txt $APP_HOME/requirements.txt
-
+COPY test4.txt $APP_HOME/test4.txt
 # Install production dependencies.
 RUN pip install -r requirements.txt
 
 # Run the web service on container startup.
-CMD exec python3 test_s3.py
+CMD exec python3 test.py

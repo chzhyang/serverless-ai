@@ -29,7 +29,7 @@ ENDPOINT_URL = "http://10.110.230.223"
 
 class CephS3():
     def __init__(self, endpoint_url, access_key, secret_key):
-        self.s3_conn = bboto.connect_s3(aws_access_key_id = access_key,
+        self.s3_conn = boto.connect_s3(aws_access_key_id = access_key,
                                         aws_secret_access_key = secret_key,
                                         host = endpoint_url,
                                         is_secure=False,               # uncomment if you are not using ssl
