@@ -11,3 +11,4 @@ spec:
       containers:
       - name: user-container
         image: docker.io/chzhyang/tf-function-knative-event-ceph:v1
+        imagePullPolicy: IfNotPresent

@@ -35,19 +35,22 @@ S3 = boto3.client(
     aws_secret_access_key=SECRET_KEY)
 
 # event count
-EVENT_COUNT = 0
+COUNT = {
+    "event_count": 0,
+}
 
 
 def main(context: Context):
     """
     Image recognition inference with optimized TensorFlow
     """
-    if context.cloud_event.data != None:
-        EVENT_COUNT = EVENT_COUNT + 1
-        print("Event number: ", EVENT_COUNT, flush=True)
-        data_json = context.cloud_event.data
+    if context.cloud_event is not None:
+        COUNT["event_count"] += 1
+        print("Event number: ", COUNT["event_count"], flush=True)
+        # data_json = context.cloud_event.data
         # print(data_json, flush=True)
-        data_dict = json.loads(data_json)
+        # data_dict = json.loads(data_json)
+        data_dict = context.cloud_event.data
         if data_dict["awsRegion"] == AWS_REGION and data_dict["eventName"] == EVENT_NAME:
             object_key = data_dict["s3"]["object"]["key"]
             print("Object key: ", object_key)
