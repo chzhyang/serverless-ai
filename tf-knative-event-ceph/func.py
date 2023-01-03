@@ -1,3 +1,4 @@
+import imghdr
 import os
 import json
 from pathlib import Path
@@ -40,6 +41,17 @@ COUNT = {
 }
 
 
+def inference(svc, file_path):
+    print("Inference ", file_path, flush=True)
+    predictions = svc.run_inference(
+        file_path, LABELS_PATH, NUM_TOP_PREDICTIONS)
+    result = {
+        "top_predictions": predictions
+    }
+    print(result, flush=True)
+    return result
+
+
 def main(context: Context):
     """
     Image recognition inference with optimized TensorFlow
@@ -54,21 +66,21 @@ def main(context: Context):
         if data_dict["awsRegion"] == AWS_REGION and data_dict["eventName"] == EVENT_NAME:
             object_key = data_dict["s3"]["object"]["key"]
             print("Object key: ", object_key)
-            file_path = Path(__file__).resolve().parent / 'data' / object_key
+            file_path = os.path.join(DATA_DIR, str(object_key))
             if not os.path.exists(file_path):
                 print("Download file from s3", flush=True)
-                S3.download_file(BUCKET_NAME, object_key, file_path)
-                if not os.path.exists(file_path):
-                    print("Failed to download ", file_path)
-                else:
-                    print("Inference ", file_path, flush=True)
-                    predictions = SERVICE.run_inference(
-                        file_path, LABELS_PATH, NUM_TOP_PREDICTIONS)
-                    result = {
-                        "top_predictions": predictions
-                    }
-                    print(result, flush=True)
-                    return json.dumps(result), 200
+                try:
+                    S3.download_file(BUCKET_NAME, object_key, file_path)
+                except Exception as e:
+                    resp = "Failed to download file from s3: " + e
+                    print(resp, flush=True)
+                    # return resp, 400
+            resp = inference(SERVICE, file_path)
+            # return json.dumps(resp), 200
+        else:
+            resp = "Unexpected event name/aws region"
+            print(resp, flush=True)
+            # return resp, 400
     else:
         print("Empty event", flush=True)
-        return "{}", 400
+        # return "{}", 400
