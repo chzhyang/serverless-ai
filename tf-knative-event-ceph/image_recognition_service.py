@@ -228,13 +228,10 @@ class ImageRecognitionService():
         Preprocess the image to tensor which can be accepted by tensorflow, 
         then run inference, and get human-readable predictions lastly.
         """
-        # print("Goto data_preprocessing()", flush=True)
         image = self._data_preprocessing(
             data_location, RESNET_IMAGE_SIZE, RESNET_IMAGE_SIZE, NUM_CHANNELS, 1)
-        # print("Goto run()", flush=True)
         predictions = self.infer_sess.run(self.output_tensor, feed_dict={
                                           self.input_tensor: image})
-        # print("Goto get_top_predictions()", flush=True)
         predictions_labels = self._get_top_predictions(
             predictions, lables_path, False, num_top_preds)
 

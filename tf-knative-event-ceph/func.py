@@ -1,3 +1,4 @@
+import datetime
 import imghdr
 import os
 import json
@@ -35,7 +36,6 @@ S3 = boto3.client(
     aws_access_key_id=ACCESS_KEY,
     aws_secret_access_key=SECRET_KEY)
 
-# event count
 COUNT = {
     "event_count": 0,
 }
@@ -43,8 +43,13 @@ COUNT = {
 
 def inference(svc, file_path):
     print("Inference ", file_path, flush=True)
+    start = datetime.now()
+    print("Start infer: ", start, flush=True)
     predictions = svc.run_inference(
         file_path, LABELS_PATH, NUM_TOP_PREDICTIONS)
+    end = datetime.now()
+    print("End infer: ", end, flush=True)
+    print("Infer time(ms): ", (end-start).microseconds/1000, flush=True)
     result = {
         "top_predictions": predictions
     }
@@ -59,9 +64,6 @@ def main(context: Context):
     if context.cloud_event is not None:
         COUNT["event_count"] += 1
         print("Event number: ", COUNT["event_count"], flush=True)
-        # data_json = context.cloud_event.data
-        # print(data_json, flush=True)
-        # data_dict = json.loads(data_json)
         data_dict = context.cloud_event.data
         if data_dict["awsRegion"] == AWS_REGION and data_dict["eventName"] == EVENT_NAME:
             object_key = data_dict["s3"]["object"]["key"]
