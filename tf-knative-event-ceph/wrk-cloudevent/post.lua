@@ -1,7 +1,6 @@
-json = require "json"
 wrk.method = "POST"
-wrk.body = json.encode(dict)
-body = '{
+-- wrk.host = "http://tf-function-event-perf-warm.default.svc.cluster.local"
+wrk.body = [[{
     "data": {
         "eventVersion": "2.2",
         "eventSource": "ceph:s3",
@@ -49,7 +48,7 @@ body = '{
         },
         "eventId": "client.test"
     }
-}'
--- wrk.headers["Content-Type"] = "application/json"
+}]]
 wrk.headers["Content-Type"] = "application/cloudevents+json"
-print(wrk.body)
+
+-- [OK] k exec wrk -- wrk -s /tmp/post.lua -c1 -t1 -d1s http://tf-function-event-perf-warm.default.svc.cluster.local

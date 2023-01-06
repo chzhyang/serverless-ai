@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: wrk
+spec:
+  volumes:
+    - name: lua
+      hostPath:
+        path: /home/yangge/faas-workloads/tf-knative-event-ceph/wrk-cloudevent/post.lua
+  containers:
+    - name: runner
+      image: docker.io/chzhyang/wrk:ubuntu
+      # imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: lua
+          mountPath: /tmp/post.lua
+      imagePullPolicy: Always
+      command: ["/bin/sh"]
+      args: ["-c", "while true; do echo hello; sleep 10;done"]

@@ -1,0 +1,18 @@
+# https://github.com/ruslanys/docker-wrk/
+FROM ubuntu:20.04 as build
+#ENV http_proxy=http://proxy-fm.intel.com:911
+#ENV https_proxy=http://proxy-fm.intel.com:912
+#ENV no_proxy="10.105.159.2,10.105.159.2,10.105.159.0/24,10.250.0.0/16,10.254.0.0/15,10.253.0.0/16,127.0.0.1,localhost,.svc,.pod,.cluster.local,.svc.cluster.local,.intel.com"
+RUN apt-get update && apt-get install git zip build-essential -y
+
+WORKDIR /tmp
+RUN git clone https://github.com/wg/wrk
+
+WORKDIR /tmp/wrk
+RUN make
+
+# Image
+FROM ubuntu:20.04
+RUN apt-get update && apt-get install netbase -y && rm -rf /var/lib/apt/lists/*
+COPY --from=build /tmp/wrk/wrk /usr/local/bin/
+CMD echo "hello"
