@@ -1,5 +1,4 @@
 import datetime
-import imghdr
 import os
 import json
 from pathlib import Path
@@ -9,9 +8,10 @@ import boto3
 
 PRETRAINED_MODEL = "resnet50_v1_5_fp32.pb"
 DATA_DIR = Path(__file__).resolve().parent / 'data'
-MODEL_PATH = os.path.join(DATA_DIR, PRETRAINED_MODEL)
+MODEL_DIR = Path(__file__).resolve().parent / 'model'
+MODEL_PATH = os.path.join(MODEL_DIR, PRETRAINED_MODEL)
 # Labels used for mapping inference results to human-readable predictions
-LABELS_PATH = os.path.join(DATA_DIR, 'labellist.json')
+LABELS_PATH = os.path.join(MODEL_DIR, 'labellist.json')
 # A local image used for handling GET request
 TEST_IMAGE = os.path.join(DATA_DIR, 'test.JPEG')
 
