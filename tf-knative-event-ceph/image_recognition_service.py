@@ -8,7 +8,7 @@ import numpy as np
 from tensorflow.python.framework import dtypes
 from tensorflow.python.tools.optimize_for_inference_lib import \
     optimize_for_inference
-
+import logging as log
 import tensorflow as tf
 
 # Basic info for loading pretrained model(ResNet50)
@@ -228,11 +228,19 @@ class ImageRecognitionService():
         Preprocess the image to tensor which can be accepted by tensorflow, 
         then run inference, and get human-readable predictions lastly.
         """
+        start = datetime.now()
         image = self._data_preprocessing(
             data_location, RESNET_IMAGE_SIZE, RESNET_IMAGE_SIZE, NUM_CHANNELS, 1)
+        end = datetime.now()
+        log.info(
+            f'1.datapreprocess start: {start}, end: {end}, cost time: {(end-start).microseconds/1000} ms')
+        start = datetime.now()
         predictions = self.infer_sess.run(self.output_tensor, feed_dict={
                                           self.input_tensor: image})
         predictions_labels = self._get_top_predictions(
             predictions, lables_path, False, num_top_preds)
+        end = datetime.now()
+        log.info(
+            f'2.run infer start: {start}, end: {end}, cost time: {(end-start).microseconds/1000} ms')
 
         return predictions_labels
