@@ -2,7 +2,7 @@ import json
 import unittest
 from werkzeug.test import EnvironBuilder
 from parliament import Context
-from cloudevents.http import CloudEvent, to_binary
+from cloudevents.http import CloudEvent, to_binary, from_http
 import requests
 
 func = __import__("func")

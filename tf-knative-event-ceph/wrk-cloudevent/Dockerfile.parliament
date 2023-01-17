@@ -1,0 +1,14 @@
+FROM python:3.8-slim-buster
+
+#ENV http_proxy=http://proxy-fm.intel.com:911
+#ENV https_proxy=http://proxy-fm.intel.com:912
+#ENV no_proxy="10.105.159.2,10.105.159.2,10.105.159.0/24,10.250.0.0/16,10.254.0.0/15,10.253.0.0/16,127.0.0.1,localhost,.svc,.pod,.cluster.local,.svc.cluster.local,.intel.com"
+WORKDIR /app
+COPY eventserver.py /app/func.py
+COPY eventtest.py /app/test.py
+RUN pip install parliament-functions==0.1.0
+# Run the web service on container startup.
+CMD exec python3 -m parliament .
+
+# docker build -f Dockerfile.parliament -t event-test .
+# docker run -it -p 9001:8080 event-test /bin/bash

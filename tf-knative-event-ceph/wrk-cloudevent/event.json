@@ -1,6 +1,4 @@
-wrk.method = "POST"
--- wrk.host = "http://tf-function-event-perf-warm.default.svc.cluster.local"
-wrk.body = [[{
+{
     "specversion": "1.0",
     "time": "2022-12-19T06:22:27.878508Z",
     "type": "com.amazonaws.ObjectCreated:Put",
@@ -54,7 +52,4 @@ wrk.body = [[{
         },
         "eventId": "curl.event.1"
     }
-}]]
-wrk.headers = {}
-wrk.headers["Content-Type"] = "application/cloudevents+json"
-
+}

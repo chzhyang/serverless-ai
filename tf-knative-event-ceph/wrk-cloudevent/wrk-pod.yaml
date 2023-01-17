@@ -6,14 +6,13 @@ spec:
   volumes:
     - name: lua
       hostPath:
-        path: /home/yangge/faas-workloads/tf-knative-event-ceph/wrk-cloudevent/post.lua
+        path: /home/yangge/faas-workloads/tf-knative-event-ceph/wrk-cloudevent
   containers:
     - name: runner
-      image: docker.io/chzhyang/wrk:ubuntu
-      # imagePullPolicy: IfNotPresent
+      image: 127.0.0.1:5000/wrk:ubuntu
+      imagePullPolicy: Always
       volumeMounts:
         - name: lua
-          mountPath: /tmp/post.lua
-      imagePullPolicy: Always
+          mountPath: /tmp/wrk-cloudevent
       command: ["/bin/sh"]
       args: ["-c", "while true; do echo hello; sleep 10;done"]

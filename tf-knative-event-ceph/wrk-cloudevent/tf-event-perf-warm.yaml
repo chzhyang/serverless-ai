@@ -1,7 +1,7 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: tf-function-event-perf-warm
+  name: tf-event-perf-warm
 spec:
   template:
     metadata:
@@ -10,5 +10,7 @@ spec:
     spec:
       containers:
       - name: user-container
-        image: docker.io/chzhyang/tf-function-knative-event-ceph:perf
+        image: 127.0.0.1:5000/tf-knative-event-ceph:perf-v6
+        # image: 127.0.0.1:5000/wrk:ubuntu
         imagePullPolicy: IfNotPresent
+        # imagePullPolicy: Always

@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import os
 import json
 from pathlib import Path
@@ -6,6 +6,8 @@ import image_recognition_service
 from parliament import Context
 import boto3
 import logging as log
+
+from waitress import serve
 PRETRAINED_MODEL = "resnet50_v1_5_fp32.pb"
 DATA_DIR = Path(__file__).resolve().parent / 'data'
 MODEL_DIR = Path(__file__).resolve().parent / 'model'
@@ -37,14 +39,26 @@ S3 = boto3.client(
     aws_secret_access_key=SECRET_KEY)
 
 COUNT = {
-    "event_count": 0,
+    "event_count": 0
 }
+
+log.basicConfig(
+    level=log.INFO,
+    format='%(asctime)s::%(levelname)s::%(message)s',
+)
 
 
 def main(context: Context):
     """
     Image recognition inference with optimized TensorFlow
     """
+    if context is None:
+        log.info("None context")
+        return "{None context}", 400
+    # if context.request is not None:
+    #     log.info(f"context.request: {context.request.data}")
+    #     # return "{get context.request}", 200
+
     if context.cloud_event is not None:
         COUNT["event_count"] += 1
         log.info(f'Event number: {COUNT["event_count"]}')
@@ -55,29 +69,31 @@ def main(context: Context):
             file_path = os.path.join(DATA_DIR, str(object_key))
             # cover file if existed
             try:
-                start = datetime.now()
+                s3_start = datetime.now()
                 S3.download_file(BUCKET_NAME, object_key, file_path)
-                end = datetime.now()
+                s3_end = datetime.now()
                 log.info(
-                    f'S3 download start: {start}, end: {end}, cost time: {(end-start).microseconds/1000} ms')
+                    f'S3 download time: {(s3_end-s3_start).microseconds/1000} ms')
             except Exception as e:
                 resp = "Failed to download file from s3: " + e
                 log.error(resp)
                 return json.dumps(resp), 400
             try:
-                start = datetime.now()
+                infer_start = datetime.now()
                 predictions = SERVICE.run_inference(
                     file_path, LABELS_PATH, NUM_TOP_PREDICTIONS)
-                end = datetime.now()
+                infer_end = datetime.now()
                 log.info(
-                    f'Infer start: {start}, end: {end}, cost time: {(end-start).microseconds/1000} ms')
+                    f'Run infer time: {(infer_end-infer_start).microseconds/1000} ms')
+                log.info(
+                    f'Total time(s3+infer): {(infer_end-s3_start).microseconds/1000} ms')
                 resp = {
                     "top_prediction": predictions
                 }
                 log.info(resp)
                 return json.dumps(resp), 200
             except Exception as e:
-                resp = "Failed to inference: " + e
+                resp = "Failed to inference: " + str(e)
                 log.error(resp)
                 return json.dumps(resp), 400
         else:
@@ -86,4 +102,4 @@ def main(context: Context):
             return json.dumps(resp), 400
     else:
         log.error("Empty event")
-        return "{}", 400
+        return "{Empty event}", 400

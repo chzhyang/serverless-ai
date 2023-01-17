@@ -1,0 +1,15 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: tf-event-perf-cold
+spec:
+  template:
+    metadata:
+      annotations:
+        # autoscaling.knative.dev/min-scale: "1"
+    spec:
+      containers:
+      - name: user-container
+        image: 127.0.0.1:5000/tf-knative-event-ceph:perf-v6
+        imagePullPolicy: IfNotPresent
+        # imagePullPolicy: Always
