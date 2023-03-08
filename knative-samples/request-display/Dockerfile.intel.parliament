@@ -1,0 +1,15 @@
+FROM intel/intel-optimized-tensorflow:2.9.1
+
+#ENV http_proxy=
+#ENV https_proxy=
+#ENV no_proxy="127.0.0.1,localhost,.svc,.pod,.cluster.local,.svc.cluster.local"
+
+COPY app.py /home/app.py
+COPY image_recognition_service.py /home/image_recognition_service.py
+COPY requirements.txt /home/requirements.txt
+
+RUN pip install parliament-functions==0.1.0
+RUN pip install boto3
+WORKDIR /home
+# Run the web service on container startup.
+CMD exec python3 -m parliament .
