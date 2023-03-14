@@ -4,7 +4,7 @@ FROM python:slim
 #ENV https_proxy=
 #ENV no_proxy="127.0.0.1,localhost,.svc,.pod,.cluster.local,.svc.cluster.local"
 WORKDIR /home
-COPY app.py /home/func.py
+COPY func.py /home/func.py
 COPY requirements.txt /home/requirements.txt
 RUN pip install -r requirements.txt
 
