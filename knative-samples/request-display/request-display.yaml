@@ -1,0 +1,14 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: request-display
+spec:
+  template:
+    metadata:
+      annotations:
+        # autoscaling.knative.dev/min-scale: "1"
+    spec:
+      containers:
+      - name: user-container
+        image: docker.io/chzhyang/request-display:v1
+        imagePullPolicy: IfNotPresent
