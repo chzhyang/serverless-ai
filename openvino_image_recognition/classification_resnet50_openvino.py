@@ -16,6 +16,7 @@ import numpy as np
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
 from openvino.runtime import Core, Layout, Type
 from openvino.tools.mo import convert_model
+import requests
 
 test_image_path = "./banana.jpg"
 model_name = "resnet-50-pytorch"
@@ -54,19 +55,21 @@ def get_top_predictions(results, lables_path, ids_are_one_indexed=False, preds_t
 
 
 def main():
-    log.basicConfig(format='[ %(levelname)s ] %(message)s', level=log.INFO, stream=sys.stdout)
+    log.basicConfig(format='[ %(levelname)s ] %(message)s',
+                    level=log.INFO, stream=sys.stdout)
 
     # Parsing and validation of input arguments
     if len(sys.argv) != 9:
-        log.info(f'Usage: {sys.argv[0]} <path_to_model> <path_to_image> <device_name> <label_path>')
+        log.info(
+            f'Usage: {sys.argv[0]} <path_to_model> <path_to_image> <device_name> <label_path>')
         return 1
-
-    model_path = sys.argv[1]
-    image_path = sys.argv[2]
-    device_name = sys.argv[3]
-    label_path = sys.argv[4]
-    iterations = sys.argv[5]
-    model_download = sys.argv[6]
+    # Two patterns: 1. use existed IR model 2. download pytorch model and convert to IR model
+    model_path = sys.argv[1]    # "./resnet-50-pytorch.xml"
+    image_path = sys.argv[2]    # "./banana.jpg"
+    device_name = sys.argv[3]   # "CPU"
+    label_path = sys.argv[4]    # "./imagenet2012.json"
+    iterations = sys.argv[5]  # 100
+    model_download = sys.argv[6]  # download and convert model
     model_name = sys.argv[7]  # "resnet-50-pytorch"
     data_type = sys.argv[8]  # "FP32"
     model_dir = os.path.dirname(os.path.realpath('__file__'))
@@ -84,23 +87,41 @@ def main():
         log.info(f'Download model')
         cmd = f"omz_downloader --name {model_name} --output_dir {model_dir}"
         # Execute the command, print the log output by the command, and judge whether the command is successful
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         print('omz_downloader output: ', stdout.decode("utf-8"))
         if p.returncode != 0:
             log.error('omz_downloader error', stderr.decode("utf-8"))
             return
         t_download = time.perf_counter()
+
+        # Fix a bug, it was not fixed in latest openvino-dev of PyPi
+        url = 'https://raw.githubusercontent.com/openvinotoolkit/open_model_zoo/master/tools/model_tools/src/openvino/model_zoo/internal_scripts/pytorch_to_onnx.py'
+        resp = requests.get(url)
+        if resp.status_code == 200:
+            from distutils.sysconfig import get_python_lib
+            dest = Path.joinpath(Path(get_python_lib()), 'openvino',
+                                 'model_zoo', 'internal_scripts', 'pytorch_to_onnx.py')
+            with open(dest, 'wb') as f:
+                f.write(resp.content)
+            log.info(f"File downloaded from {url} and saved to {dest}.")
+        else:
+            log.error(
+                f"Error downloading file from {url}. Status code: {resp.status_code}")
+
         # Convert model
         log.info(f'Convert model to IR')
         cmd = f"omz_converter --name {model_name} --output_dir {model_dir} --precisions {data_type}"
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         print('omz_converter output: ', stdout.decode("utf-8"))
         if p.returncode != 0:
             log.error('omz_converter error', stderr.decode("utf-8"))
             return
-        model_path = os.path.join(model_dir, "public", model_name, data_type, model_name + ".xml")
+        model_path = os.path.join(
+            model_dir, "public", model_name, data_type, model_name + ".xml")
         if os.path.exists(model_path) is False:
             log.error('model download and convert error')
             return
@@ -218,7 +239,8 @@ def main():
     for i in range(len(top_10)):
         class_id = top_10[i]
         # probability_indent = ' ' * (len('class_id') - len(str(class_id)) + 1)
-        log.info(f'{class_id:6}{probs[class_id]:12.7f}    {predictions_lable[i]}')
+        log.info(
+            f'{class_id:6}{probs[class_id]:12.7f}    {predictions_lable[i]}')
     # for class_id in top_10:
     #     probability_indent = ' ' * (len('class_id') - len(str(class_id)) + 1)
     #     log.info(f'{class_id}{probability_indent}{probs[class_id]:.7f}')
@@ -232,20 +254,29 @@ def main():
 # ----------------------------------------------------------------------------------------------------------------------
     log.info('')
     log.info("t_total_coldstart        {:.6f} sec".format(t_warmup - t_start))
-    log.info("  t_runtime              {:.6f} sec, {:.0%}".format(t_runtime - t_start, (t_runtime - t_start) / (t_warmup - t_start)))
+    log.info("  t_runtime              {:.6f} sec, {:.0%}".format(
+        t_runtime - t_start, (t_runtime - t_start) / (t_warmup - t_start)))
 
     if t_convert == 0.0 and t_download == 0.0:
-        log.info("  t_readmodel            {:.6f} sec, {:.0%}".format(t_readmodel - t_runtime, (t_readmodel - t_runtime) / (t_warmup - t_start)))
+        log.info("  t_readmodel            {:.6f} sec, {:.0%}".format(
+            t_readmodel - t_runtime, (t_readmodel - t_runtime) / (t_warmup - t_start)))
     else:
-        log.info("  t_download             {:.6f} sec, {:.0%}".format(t_download - t_runtime, (t_download - t_runtime) / (t_warmup - t_start)))
-        log.info("  t_convert              {:.6f} sec, {:.0%}".format(t_convert - t_download, (t_convert - t_download) / (t_warmup - t_start)))
-        log.info("  t_readmodel            {:.6f} sec, {:.0%}".format(t_readmodel - t_convert, (t_readmodel - t_convert) / (t_warmup - t_start)))
+        log.info("  t_download             {:.6f} sec, {:.0%}".format(
+            t_download - t_runtime, (t_download - t_runtime) / (t_warmup - t_start)))
+        log.info("  t_convert              {:.6f} sec, {:.0%}".format(
+            t_convert - t_download, (t_convert - t_download) / (t_warmup - t_start)))
+        log.info("  t_readmodel            {:.6f} sec, {:.0%}".format(
+            t_readmodel - t_convert, (t_readmodel - t_convert) / (t_warmup - t_start)))
 
-    log.info("  t_ppp                  {:.6f} sec, {:.0%}".format(t_ppp - t_readmodel, (t_ppp - t_readmodel) / (t_warmup - t_start)))
-    log.info("  t_loadmodel            {:.6f} sec, {:.0%}".format(t_loadmodel - t_ppp, (t_loadmodel - t_ppp) / (t_warmup - t_start)))
-    log.info("  t_warmup               {:.6f} sec, {:.0%}".format(t_warmup - t_loadmodel, (t_warmup - t_loadmodel) / (t_warmup - t_start)))
+    log.info("  t_ppp                  {:.6f} sec, {:.0%}".format(
+        t_ppp - t_readmodel, (t_ppp - t_readmodel) / (t_warmup - t_start)))
+    log.info("  t_loadmodel            {:.6f} sec, {:.0%}".format(
+        t_loadmodel - t_ppp, (t_loadmodel - t_ppp) / (t_warmup - t_start)))
+    log.info("  t_warmup               {:.6f} sec, {:.0%}".format(
+        t_warmup - t_loadmodel, (t_warmup - t_loadmodel) / (t_warmup - t_start)))
     log.info("t_total_infer            {:.6f} sec".format(t_infer - t_warmup))
-    log.info("  t_avg_infer            {:.6f} sec".format((t_infer - t_warmup) / float(iterations)))
+    log.info("  t_avg_infer            {:.6f} sec".format(
+        (t_infer - t_warmup) / float(iterations)))
     log.info("t_result                 {:.6f} sec".format(t_result - t_infer))
 
     return 0
