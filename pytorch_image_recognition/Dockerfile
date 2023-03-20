@@ -4,8 +4,8 @@ FROM intel/intel-optimized-pytorch:1.12.100
 #ENV http_proxy=
 #ENV https_proxy=
 #ENV no_proxy="127.0.0.1,localhost,.svc,.pod,.cluster.local,.svc.cluster.local"
-
-RUN apt-get install python3-venv wget -y
+RUN apt-get update
+RUN apt-get install python3-venv git -y
 # RUN python3 -m pip install torch==1.12.0+cpu torchvision==0.13.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
 WORKDIR /home
