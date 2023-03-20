@@ -27,9 +27,9 @@ RUN cp pytorch_to_onnx.py /usr/local/lib/python3.8/dist-packages/openvino/model_
 COPY data /home/data
 COPY model /home/model
 COPY requirements.txt /home/requirements.txt
-COPY func.py /home/func.py
+COPY classification_resnet50_openvino.py /home/classification_resnet50_openvino.py
 RUN pip install -r requirements.txt
 # RUN pip install parliament-functions==0.1.0
-RUN git clone -b coldstartup https://github.com/chzhyang/parliament.git
+# RUN git clone -b coldstartup https://github.com/chzhyang/parliament.git
 # Run the web service on container startup.
-CMD exec python3 -m parliament.parliament .
+CMD exec python3 classification_resnet50_openvino.py  model/public/resnet-50-pytorch/FP32/resnet-50-pytorch.xml data/test2.jpg CPU model/imagenet2012.json 100 true resnet-50-pytorch FP32

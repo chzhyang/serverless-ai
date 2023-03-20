@@ -1,5 +1,0 @@
-opencv-python>=4.5
-boto3
-cloudevents==1.7.0
-Flask==2.2.2
-waitress
