@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (C) 2018-2023 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
 
 import json
 import logging as log
@@ -15,8 +13,6 @@ import cv2
 import numpy as np
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
 from openvino.runtime import Core, Layout, Type
-from openvino.tools.mo import convert_model
-import requests
 
 test_image_path = "./banana.jpg"
 model_name = "resnet-50-pytorch"
@@ -96,23 +92,9 @@ def main():
             return
         t_download = time.perf_counter()
 
-        # Fix a bug, it was not fixed in latest openvino-dev of PyPi
-        url = 'https://raw.githubusercontent.com/openvinotoolkit/open_model_zoo/master/tools/model_tools/src/openvino/model_zoo/internal_scripts/pytorch_to_onnx.py'
-        resp = requests.get(url)
-        if resp.status_code == 200:
-            from distutils.sysconfig import get_python_lib
-            dest = Path.joinpath(Path(get_python_lib()), 'openvino',
-                                 'model_zoo', 'internal_scripts', 'pytorch_to_onnx.py')
-            with open(dest, 'wb') as f:
-                f.write(resp.content)
-            log.info(f"File downloaded from {url} and saved to {dest}.")
-        else:
-            log.error(
-                f"Error downloading file from {url}. Status code: {resp.status_code}")
-
         # Convert model
         log.info(f'Convert model to IR')
-        cmd = f"omz_converter --name {model_name} --output_dir {model_dir} --precisions {data_type}"
+        cmd = f"omz_converter --name {model_name} --output_dir {model_dir} --download_dir {model_dir} --precisions {data_type}"
         p = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()

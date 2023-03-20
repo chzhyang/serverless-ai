@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (C) 2018-2023 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
 
 import json
 import logging as log
@@ -16,7 +14,6 @@ import cv2
 import numpy as np
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
 from openvino.runtime import Core, Layout, Type
-import requests
 from parliament.parliament import Context
 
 MODEL_NAME = "resnet-50-pytorch"
@@ -27,7 +24,7 @@ MODEL_PATH = os.path.join(MODEL_DIR, PRECISION, "resnet-50-pytorch.xml")
 # Labels used for mapping inference results to human-readable predictions
 LABELS_PATH = os.path.join(MODEL_DIR, 'imagenet2012.json')
 # A local image used for handling GET request
-TEST_IMAGE = os.path.join(DATA_DIR, 'test1.JPEG')
+TEST_IMAGE = os.path.join(DATA_DIR, 'test1.jpg')
 NUM_TOP_PREDICTIONS = 5
 
 
@@ -36,6 +33,9 @@ COUNT = {
     "GET_count": 0
 }
 INIT_LIST = {}
+
+log.basicConfig(format='[ %(levelname)s ] %(message)s',
+                level=log.INFO, stream=sys.stdout)
 
 
 def init():
@@ -156,23 +156,9 @@ class ImageRecognitionService():
             log.error('omz_downloader error', stderr.decode("utf-8"))
             return
 
-        # Fix a bug, it was not fixed in latest openvino-dev of PyPi
-        url = 'https://raw.githubusercontent.com/openvinotoolkit/open_model_zoo/master/tools/model_tools/src/openvino/model_zoo/internal_scripts/pytorch_to_onnx.py'
-        resp = requests.get(url)
-        if resp.status_code == 200:
-            from distutils.sysconfig import get_python_lib
-            dest = Path.joinpath(Path(get_python_lib()), 'openvino',
-                                 'model_zoo', 'internal_scripts', 'pytorch_to_onnx.py')
-            with open(dest, 'wb') as f:
-                f.write(resp.content)
-            log.info(f"File downloaded from {url} and saved to {dest}.")
-        else:
-            log.error(
-                f"Error downloading file from {url}. Status code: {resp.status_code}")
-
         # Convert model
         log.info(f'Convert model to IR')
-        cmd = f"omz_converter --name {MODEL_NAME} --output_dir {MODEL_DIR} --precisions {PRECISION}"
+        cmd = f"omz_converter --name {MODEL_NAME} --output_dir {MODEL_DIR} --download_dir {model_dir} --precisions {PRECISION}"
         p = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
@@ -213,7 +199,6 @@ class ImageRecognitionService():
             top_predictions, label_path, True, 10)
 
         header = 'class_id probability label'
-
         log.info(f'Image path: {img_filepath}')
         log.info(f'Top {num_top_predictions} results: ')
         log.info(header)
@@ -223,19 +208,17 @@ class ImageRecognitionService():
             log.info(
                 f'{class_id:6}{probs[class_id]:12.7f}    {predictions_lable[i]}')
 
-        result = {"top_prediction": top_predictions[0]}
+        result = {"top_prediction": predictions_lable[0]}
         return result
 
 
-service = ImageRecognitionService(MODEL_PATH, False, MODEL_NAME, MODEL_DIR)
+service = ImageRecognitionService(MODEL_PATH, True, MODEL_NAME, MODEL_DIR)
 
 
 def main(context: Context):
     """
     Image recognition inference with OpenVINO
     """
-    log.basicConfig(format='[ %(levelname)s ] %(message)s',
-                    level=log.INFO, stream=sys.stdout)
 
     if context is None:
         log.info("None context")
@@ -284,7 +267,7 @@ def main(context: Context):
                     return json.dumps(resp), 400
             return json.dumps(service.run_inference(img_filepath, LABELS_PATH, NUM_TOP_PREDICTIONS)), 200
         else:
-            resp = "Server just supports GET requeset now"
+            resp = "Server just supports requeset of HTTP GET or Cloudevent.events now"
             log.error(resp)
             return json.dumps(resp), 400
     else:
