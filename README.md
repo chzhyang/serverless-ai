@@ -1,2 +1,14 @@
-# faas-workloads
-faas workloads
+# Cloud Native AI inference workload
+- Plateform
+  - FaaS/serverless(Kantive)
+  - Container
+  - OpenFunction
+- AI inference framework
+  - OpenVINO
+  - PyTorch
+  - TensorFlow
+  - Intel oneDNN accelation
+ - Use case
+  - Image classification
+  - GPT
+  - Object detection
