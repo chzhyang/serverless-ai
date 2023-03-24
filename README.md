@@ -1,14 +1,15 @@
 # Cloud Native AI inference workload
-- Plateform
-  - FaaS/serverless(Kantive)
-  - Container
-  - OpenFunction
-- AI inference framework
-  - OpenVINO
-  - PyTorch
-  - TensorFlow
-  - Intel oneDNN accelation
- - Use case
-  - Image classification
-  - GPT
-  - Object detection
+| Category | Option                     | 
+|----------|----------------------------|
+| Platform | FaaS/serverless(Kantive)  | 
+|          | Container                  | 
+|          | OpenFunction               | 
+| Framework | OpenVINO         |
+|                         | PyTorch          |
+|                         | PyTorch with intel optimized extension |
+|                         | TensorFlow       |
+|                         | Intel optimized TensorFlow  |
+| Use Case | Image Classification       |
+|          | GPT                        |
+|          | Object Detection           |
+|          | Transformer           |
