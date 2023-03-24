@@ -1,0 +1,30 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: classification-openvino-func
+spec:
+  template:
+    metadata:
+      annotations:
+        # autoscaling.knative.dev/min-scale: "1"
+        # autoscaling.knative.dev/initial-scale: "0" # preparement - initial-scale: "0" in global configmaps/config-autoscaler
+    spec:
+      containers:
+      - name: user-container
+        image: docker.io/chzhyang/classification-torch-func:v1
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: S3_ENABLED
+          value: "true"
+          name: S3_ACCESS_KEY
+          value: "Y51LDIT65ZN41VVLKG0H"
+          name: S3_SECRET_KEY
+          value: "GOxbWKx5NunhlAt3xTvDUh3uHP04A6Cv3UFEwdGS"
+          name: S3_ENDPOINT_URL
+          value: "http://10.110.230.223:80"
+          name: S3_BUCKET_NAME
+          value: "fish"
+          name: S3_AWS_REGION
+          value: "my-store"
+          name: S3_EVENT_NAME
+          value: "ObjectCreated:Put"
