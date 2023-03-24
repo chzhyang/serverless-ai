@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (C) 2018-2023 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
 
 import json
 import logging as log
 import os
 from pathlib import Path
-import subprocess
 import sys
 import time
 import torch
@@ -15,15 +12,6 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 from PIL import Image
 import numpy as np
-test_image_path = "./banana.jpg"
-model_name = "resnet-50-pytorch"
-
-# def convert_model(origin_model_path, output_model_dir):
-#     model_name = "saved_model"
-#     cmd = "mo --framework tf --saved_model_dir " + origin_model_path + " --output_dir " + output_model_dir + " --model_name " + model_name
-#     return output_model_dir + "/" + model_name
-# omz_converter - -name resnet-50-pytorch - v2 - pytorch - -precisions FP16 - -download_dir model - -output_dir model
-# if a file exist
 
 
 def get_labels(lables_path):
@@ -61,28 +49,23 @@ def get_top_predictions(results, lables_path, ids_are_one_indexed=False, preds_t
 def main():
     log.basicConfig(format='[ %(levelname)s ] %(message)s',
                     level=log.INFO, stream=sys.stdout)
-    log.info('torch:', torch.__version__)
-#     # Parsing and validation of input arguments
-#     if len(sys.argv) != 9:
-#         log.info(f'Usage: {sys.argv[0]} <path_to_model> <path_to_image> <device_name> <label_path>')
-#         return 1
+
     model_download = sys.argv[1]
     image_path = sys.argv[2]
     iterations = sys.argv[3]
-    optimize = sys.argv[4]  # "False"
-    jit = sys.argv[5]  # "False"
-    benchmark = sys.argv[6]  # "True"
+    optimize = sys.argv[4]  # "false"
+    jit = sys.argv[5]  # "false"
+    benchmark = sys.argv[6]  # "true"
     model_path = sys.argv[7]  # local model path
     precision = sys.argv[8]  # "FP32"
     label_path = sys.argv[9]
-    device_name = sys.argv[10]
 
     times = []
     sum = 0.0
     # Load model
     t_start = time.perf_counter()
     # use online model
-    if model_download == "True":
+    if model_download == "true":
         model = models.resnet50(weights='ResNet50_Weights.DEFAULT')
     elif model_path is not None:
         model = torch.load(model_path)
@@ -90,7 +73,7 @@ def main():
     t_model = time.perf_counter()
 
     # Optimize model with intel extension for pytorch
-    if optimize == True:
+    if optimize == "true":
         import intel_extension_for_pytorch as ipex
         log.info('ipex:', ipex.__version__)
         model = ipex.optimize(model)
@@ -105,16 +88,16 @@ def main():
             std=[0.229, 0.224, 0.225]
         )])
     # benchmark
-    if benchmark == "True":
+    if benchmark == "true":
         with torch.no_grad():
-            for i in range(iterations):
+            for i in range(int(iterations)):
                 t_1 = time.perf_counter()
-                img = Image.open("./test.jpg").convert('RGB')
+                img = Image.open(image_path).convert('RGB')
                 img_preprocessed = preprocess(img)
                 input_tensor = torch.unsqueeze(img_preprocessed, 0)
 
                 # open JIT
-                if jit == "True":
+                if jit == "true":
                     model = torch.jit.script(model, input_tensor)
                     model = torch.jit.freeze(model)
                     t_jit = time.perf_counter()
@@ -126,13 +109,14 @@ def main():
                 if i > 0:
                     sum = sum + t_2 - t_1
         log.info('')
-        log.info("t_model        {:.6f} sec".format(t_model - t_start))
-        if optimize == "True":
-            log.info("t_optimize     {:.6f} sec".format(
+        log.info("t_model                  {:.6f} sec".format(
+            t_model - t_start))
+        if optimize == "true":
+            log.info("t_optimize           {:.6f} sec".format(
                 t_optimize - t_model))
-        log.info("t_first_infer                 {:.6f} sec".format(times[0]))
-        log.info("t_avg_infer                 {:.6f} sec".format(
-            sum / float(iterations - 1)))
+        log.info("t_first_infer            {:.6f} sec".format(times[0]))
+        log.info("t_avg_infer              {:.6f} sec".format(
+            sum / (float(iterations) - 1.0)))
     # inference
     else:
         with torch.no_grad():
@@ -148,32 +132,15 @@ def main():
             input_tensor = torch.unsqueeze(img_preprocessed, 0)
 
             # open JIT
-            if jit == True:
+            if jit == "true":
                 model = torch.jit.script(model, input_tensor)
                 model = torch.jit.freeze(model)
 
             result_torch = model(torch.as_tensor(input_tensor).float())
-            result_mask_torch = torch.argmax(
-                result_torch['out'], dim=1).squeeze(0).numpy().astype(np.uint8)
-
-            # Change a shape of a numpy.ndarray with results to get another one with one dimension
-            print("result_mask_torch: ", result_mask_torch)
-            # log.info(f'Image path: {image_path}')
-            # log.info('Top 10 results: ')
-            # header = 'class_id probability label'
-            # log.info(header)
-            # log.info('-' * len(header))
-            # for i in range(len(top_10)):
-            #     class_id = top_10[i]
-            #     # probability_indent = ' ' * (len('class_id') - len(str(class_id)) + 1)
-            #     log.info(
-            #         f'{class_id:6}{probs[class_id]:12.7f}    {predictions_lable[i]}')
-            # for class_id in top_10:
-            #     probability_indent = ' ' * (len('class_id') - len(str(class_id)) + 1)
-            #     log.info(f'{class_id}{probability_indent}{probs[class_id]:.7f}')
-
-            # log.info(f'top1: {predictions_lable[0]}')
-
+            _, preds = torch.max(result_torch, 1)
+            predictions_lable = get_top_predictions(
+                preds.cpu().numpy(), label_path, True, 1)
+            log.info(f'Top1: {predictions_lable[0]}')
     return 0
 
 

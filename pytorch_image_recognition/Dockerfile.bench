@@ -20,9 +20,7 @@ RUN . /home/pytorch_env/bin/activate
 COPY data /home/data
 COPY model /home/model
 COPY requirements.txt /home/requirements.txt
-COPY func.py /home/func.py
+COPY classification_resnet50_pytorch.py /home/classification_resnet50_pytorch.py
 RUN pip install -r requirements.txt
-RUN git clone -b coldstartup https://github.com/chzhyang/parliament.git
 
-# Run the web service on container startup.
-CMD exec python3 -m parliament.parliament .
+CMD exec python3 -u classification_resnet50_pytorch.py true data/test1.jpg 100 false false true . FP32 /model/imagenet2012.json
