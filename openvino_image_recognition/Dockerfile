@@ -19,11 +19,6 @@ RUN pip install openvino-dev[pytorch,onnx]
 RUN wget https://raw.githubusercontent.com/openvinotoolkit/open_model_zoo/master/tools/model_tools/src/openvino/model_zoo/internal_scripts/pytorch_to_onnx.py
 RUN cp pytorch_to_onnx.py /usr/local/lib/python3.8/dist-packages/openvino/model_zoo/internal_scripts/pytorch_to_onnx.py
 
-# RUN git clone --branch dev https://github.com/chzhyang/openvino.git
-# WORKDIR /home/openvino/samples/python/hello_classification
-# RUN git clone --branch coldstart https://github.com/chzhyang/faas-workloads.git
-# WORKDIR /home/faas-workloads/openvino_image_recognition
-
 COPY data /home/data
 COPY model /home/model
 COPY requirements.txt /home/requirements.txt

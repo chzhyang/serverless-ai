@@ -235,12 +235,12 @@ def main(context: Context):
         if data_dict["awsRegion"] == INIT_LIST["aws_region"] and data_dict["eventName"] == INIT_LIST["event_name"]:
             object_key = data_dict["s3"]["object"]["key"]
             log.info(f'Object key: {object_key}')
-            file_path = os.path.join(DATA_DIR, str(object_key))
+            img_filepath = os.path.join(DATA_DIR, str(object_key))
             # cover file if existed
             try:
                 s3_start = time.perf_counter()
                 INIT_LIST["s3"].download_file(
-                    INIT_LIST["bucket_name"], object_key, file_path)
+                    INIT_LIST["bucket_name"], object_key, img_filepath)
                 s3_end = time.perf_counter()
                 log.info(
                     f'S3 download time: {s3_end-s3_start} s')
@@ -260,7 +260,7 @@ def main(context: Context):
             img_filepath = os.path.join(DATA_DIR, img_name + ".jpg")
             if os.path.exists(img_filepath) is False:
                 log.info("Image file is not exist, use default image!")
-                img_filepath = os.path.join(DATA_DIR, TEST_IMAGE)
+                img_filepath = TEST_IMAGE
                 if os.path.exists(img_filepath) is False:
                     resp = img_filepath + " and default image are not exist."
                     log.error(resp)
