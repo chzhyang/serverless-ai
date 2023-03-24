@@ -14,9 +14,6 @@ import numpy as np
 from openvino.preprocess import PrePostProcessor, ResizeAlgorithm
 from openvino.runtime import Core, Layout, Type
 
-test_image_path = "./banana.jpg"
-model_name = "resnet-50-pytorch"
-
 
 def get_labels(lables_path):
     """Get the set of possible labels for classification"""
@@ -60,14 +57,15 @@ def main():
             f'Usage: {sys.argv[0]} <path_to_model> <path_to_image> <device_name> <label_path>')
         return 1
     # Two patterns: 1. use existed IR model 2. download pytorch model and convert to IR model
-    model_path = sys.argv[1]    # "./resnet-50-pytorch.xml"
-    image_path = sys.argv[2]    # "./banana.jpg"
+    # "model/public/resnet-50-pytorch/FP32/resnet-50-pytorch.xml"
+    model_path = sys.argv[1]
+    image_path = sys.argv[2]    # "data/test1.jpg"
     device_name = sys.argv[3]   # "CPU"
-    label_path = sys.argv[4]    # "./imagenet2012.json"
-    iterations = sys.argv[5]  # 100
+    label_path = sys.argv[4]    # "model/imagenet2012.json"
+    iterations = sys.argv[5]    # 100
     model_download = sys.argv[6]  # download and convert model
-    model_name = sys.argv[7]  # "resnet-50-pytorch"
-    data_type = sys.argv[8]  # "FP32"
+    model_name = sys.argv[7]    # "resnet-50-pytorch"
+    precision = sys.argv[8]     # "FP32"
     model_dir = os.path.dirname(os.path.realpath('__file__'))
 
 # --------------------------- Step 1. Initialize OpenVINO Runtime Core ------------------------------------------------
@@ -94,7 +92,7 @@ def main():
 
         # Convert model
         log.info(f'Convert model to IR')
-        cmd = f"omz_converter --name {model_name} --output_dir {model_dir} --download_dir {model_dir} --precisions {data_type}"
+        cmd = f"omz_converter --name {model_name} --output_dir {model_dir} --download_dir {model_dir} --precisions {precision}"
         p = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
@@ -103,7 +101,7 @@ def main():
             log.error('omz_converter error', stderr.decode("utf-8"))
             return
         model_path = os.path.join(
-            model_dir, "public", model_name, data_type, model_name + ".xml")
+            model_dir, "public", model_name, precision, model_name + ".xml")
         if os.path.exists(model_path) is False:
             log.error('model download and convert error')
             return
@@ -170,7 +168,7 @@ def main():
 # --------------------------- Step 6. warm inference -------------------------------------------------------------------
     log.info('Warm up inference')
     # Read input image
-    image = cv2.imread(test_image_path)
+    image = cv2.imread(image_path)
     # resize for resnet50
     w = 224
     h = 224

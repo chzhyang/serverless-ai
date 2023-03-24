@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: user-container
-        image: docker.io/chzhyang/chzhyang/classification-openvino-func:v1
+        image: docker.io/chzhyang/classification-openvino-func:v1
         imagePullPolicy: IfNotPresent
         env:
         - name: S3_ENABLED
