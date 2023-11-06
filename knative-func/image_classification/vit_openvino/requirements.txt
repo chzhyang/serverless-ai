@@ -1,0 +1,15 @@
+boto3
+cloudevents==1.7.0
+Flask==2.2.2
+Werkzeug==2.2.2
+waitress==2.1.2
+# opencv-python>=4.5
+Pillow==10.1.0
+torch>=2.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+transformers==4.31.0
+optimum-intel
+onnx==1.15.0
+onnxruntime==1.16.1
+einops=0.7.0
+transformers>=4.31.0
+openvino==2023.2.0.dev20230922
