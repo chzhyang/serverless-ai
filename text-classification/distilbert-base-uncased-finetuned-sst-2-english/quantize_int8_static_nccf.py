@@ -1,6 +1,6 @@
-
-model_id = "/home/sdp/models/distilbert-base-uncased-finetuned-sst-2-english"
-
+import gc
+model_id = "distilbert-base-uncased-finetuned-sst-2-english"
+q8_model = "/home/sdp/models/distilbert-base-uncased-finetuned-sst-2-english-int8-static"
 def static_int8():
     # apply static quantization on a fine-tuned DistilBERT
     # nccf
@@ -24,12 +24,10 @@ def static_int8():
         preprocess_batch=True,
     )
     # The directory where the quantized model will be saved
-    save_dir = "/home/sdp/models/distilbert-base-uncased-finetuned-sst-2-english-int8-static"
+    save_dir = q8_model
     # Apply static quantization and save the resulting model in the OpenVINO IR format
     quantizer.quantize(calibration_dataset=calibration_dataset, save_directory=save_dir)
-    # Load the quantized model
-    optimized_model = OVModelForSequenceClassification.from_pretrained(save_dir)
-    classifier = pipeline("text-classification", model=model, tokenizer=tokenizer)
-    results = classifier("He's a dreadful magician.")
-
+    tokenizer.save_pretrained(save_dir)
+    gc.collect()
+    
 static_int8()
