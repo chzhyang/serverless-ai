@@ -6,6 +6,38 @@ from pathlib import Path
 from typing import List, Tuple
 from copy import deepcopy
 import time
+import openvino as ov
+import logging as log
+import sys
+
+log.basicConfig(format='[ %(levelname)s ] %(message)s',
+                level=log.INFO, stream=sys.stdout)
+core = ov.runtime.Core()
+
+
+def read_config():
+    def param_to_string(parameters) -> str:
+        """Convert a list / tuple of parameters returned from IE to a string."""
+        if isinstance(parameters, (list, tuple)):
+            return ', '.join([str(x) for x in parameters])
+        else:
+            return str(parameters)
+
+    log.info('Available devices:')
+
+    for device in core.available_devices:
+        log.info(f'{device}:')
+        log.info('\tSUPPORTED_PROPERTIES:')
+        for property_key in core.get_property(device, 'SUPPORTED_PROPERTIES'):
+            if property_key not in ('SUPPORTED_METRICS', 'SUPPORTED_CONFIG_KEYS', 'SUPPORTED_PROPERTIES'):
+                try:
+                    property_val = core.get_property(device, property_key)
+                except TypeError:
+                    property_val = 'UNSUPPORTED TYPE'
+                log.info(
+                    f'\t\t{property_key}: {param_to_string(property_val)}')
+        log.info('')
+
 
 def sample_next_token(logits: np.ndarray, top_k=20, top_p=0.7, temperature=1):
     # softmax with temperature
@@ -26,6 +58,7 @@ def sample_next_token(logits: np.ndarray, top_k=20, top_p=0.7, temperature=1):
     next_token = np.random.choice(top_k_idx, size=1, p=top_k_probs)
     return next_token[0].item()
 
+
 class ChatGLM2Model():
 
     def __init__(self,
@@ -34,6 +67,8 @@ class ChatGLM2Model():
 
         ir_model_path = Path(model_path)
         ir_model = ir_model_path / "openvino_model.xml"
+
+        read_config()
 
         print(" --- loading tokenizer --- ")
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -61,8 +96,15 @@ class ChatGLM2Model():
         print(" --- model compiling --- ")
         # compile the model for CPU devices
         self.request = core.compile_model(
-            model=self.model, device_name=device).create_infer_request()
+            model=self.model,
+            device_name=device,
+            config={
+                ov.properties.cache_dir(): "./"
+            }
+        ).create_infer_request()
         self.eos_token_id = [self.tokenizer.eos_token_id]
+
+        read_config()
 
     def build_inputs(self,
                      history: List[Tuple[str, str]],
@@ -70,7 +112,7 @@ class ChatGLM2Model():
                      system: str = "",
                      max_input_tokens: int = 2048):
         prompt = self.tokenizer.build_prompt(query, history=history)
-        inputs  = self.tokenizer([prompt], return_tensors="np")
+        inputs = self.tokenizer([prompt], return_tensors="np")
         input_tokens = inputs['input_ids'][:][-max_input_tokens:]
         return input_tokens
 

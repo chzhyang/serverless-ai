@@ -13,7 +13,7 @@ parser.add_argument('-h',
                     action='help',
                     help='Show this help message and exit.')
 parser.add_argument('-m',
-                    '--model_id',
+                    '--model-id',
                     default='THUDM/chatglm3-6b',
                     required=False,
                     type=str,
@@ -69,11 +69,11 @@ def _patch_chatglm_core_attention_forward(model: "PreTrainedModel"):
 
 
 if 'chatglm2' in args.model_id:
-    ir_model_path = Path('chatglm') / Path('chatglm2')
+    ir_model_path = Path('/home/sdp/models') / Path('chatglm2-6b-ov')
     if ir_model_path.exists() == False:
         os.mkdir(ir_model_path)
 elif 'chatglm3' in args.model_id:
-    ir_model_path = Path('chatglm') / Path('chatglm3')
+    ir_model_path = Path('/home/sdp/models') / Path('chatglm3-6b-ov')
     if ir_model_path.exists() == False:
         os.mkdir(ir_model_path)
 else:

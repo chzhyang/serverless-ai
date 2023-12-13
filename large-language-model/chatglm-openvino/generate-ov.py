@@ -1,8 +1,15 @@
+
 import argparse
 import time
 import psutil
 import os
 from threading import Event, Thread
+
+import logging as log
+import sys
+log.basicConfig(format='[ %(levelname)s ] %(message)s',
+                level=log.INFO, stream=sys.stdout)
+
 
 class MemConsumption:
     def __init__(self):
@@ -71,6 +78,7 @@ class MemConsumption:
         self.g_exit_get_mem_thread = True
         self.t_mem_thread.join()
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('-h',
@@ -101,46 +109,45 @@ if __name__ == "__main__":
                         type=str,
                         help='Required. device for inference')
     args = parser.parse_args()
-    
+
     model_id = args.model_path
     if 'chatglm2' in model_id:
         from chatglm.modeling import ChatGLM2Model
         ov_model = ChatGLM2Model(model_id, args.device)
-        print("yes")
     elif 'chatglm3' in model_id:
         from chatglm.modeling import ChatGLM3Model
         ov_model = ChatGLM3Model(model_id, args.device)
     else:
         raise NotImplementedError(f"Unsupported model id {model_id!r}")
-    
+
     mem_consumption = MemConsumption()
     max_rss_mem_consumption = ''
     max_shared_mem_consumption = ''
     mem_consumption.start_collect_mem_consumption_thread()
     mem_consumption.start_collect_memory_consumption()
-    
+
     input_data = ov_model.build_inputs([], args.prompt)
     input_len = len(input_data[0])
-    
-    print(" --- start generating --- ")
+
+    log.info(" --- start generating --- ")
     start = time.perf_counter()
     response, num_tokens, latencies = ov_model.generate_sequence(
         input_data, max_generated_tokens=args.max_sequence_length)
     end = time.perf_counter()
     output_data = ov_model.tokenizer.decode(response, skip_special_tokens=True)
     answer, _ = ov_model.process_response(output_data, [])
-    print(f"Response: {answer}")
-    
+    log.info(f"Response: {answer}")
+
     mem_consumption.end_collect_momory_consumption()
     max_rss_mem_consumption, max_shared_mem_consumption = mem_consumption.get_max_memory_consumption()
     mem_consumption.clear_max_memory_consumption()
-    
-    print(" --- Benchmarking --- ")
-    print(f"Input length: {input_len} tokens")
-    print(
+
+    log.info(" --- Benchmarking --- ")
+    log.info(f"Input length: {input_len} tokens")
+    log.info(
         f"Generated {num_tokens} tokens in {end - start:.2f} s on {args.device}")
-    print(
+    log.info(
         f"Maximum rss memory consumption: {max_rss_mem_consumption:.2f} MB, Maximum shared memory consumption: {max_shared_mem_consumption:.2f}  MB")
-    print(
+    log.info(
         f"First inference latency: {1000*latencies[0]:.2f} ms/token, Other inference latency {1000*latencies[1]/(num_tokens-1):.2f} ms/token in average")
     mem_consumption.end_collect_mem_consumption_thread()
