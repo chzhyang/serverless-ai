@@ -5,7 +5,31 @@ from pathlib import Path
 import numpy as np
 import argparse
 import time
+import logging as log
+import sys
+log.basicConfig(format='[ %(levelname)s ] %(message)s',
+                level=log.INFO, stream=sys.stdout)
+# read config
+def read_config():
+    def param_to_string(parameters) -> str:
+        """Convert a list / tuple of parameters returned from IE to a string."""
+        if isinstance(parameters, (list, tuple)):
+            return ', '.join([str(x) for x in parameters])
+        else:
+            return str(parameters)
 
+    log.info('Available devices:')
+    for device in core.available_devices:
+        log.info(f'{device}:')
+        log.info('\tSUPPORTED_PROPERTIES:')
+        for property_key in core.get_property(device, 'SUPPORTED_PROPERTIES'):
+            if property_key not in ('SUPPORTED_METRICS', 'SUPPORTED_CONFIG_KEYS', 'SUPPORTED_PROPERTIES'):
+                try:
+                    property_val = core.get_property(device, property_key)
+                except TypeError:
+                    property_val = 'UNSUPPORTED TYPE'
+                log.info(f'\t\t{property_key}: {param_to_string(property_val)}')
+        log.info('')
 
 def softmax(x):
     e_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
@@ -100,7 +124,7 @@ def generate_sequence(sampling, input_ids, attention_mask, eos_token_id,
             latency.append(end - st)
             st = end
             tmp = input_ids[0].tolist()
-            print(len(latency), len(tmp), tmp)
+            # print(len(latency), len(tmp), tmp)
     return input_ids, count
 
 
@@ -149,7 +173,7 @@ if __name__ == "__main__":
     tokenizer = LlamaTokenizer.from_pretrained(args.model_path)
     inputs = tokenizer(args.prompt, return_tensors="np")
 
-    print(" --- reading model --- ")
+    print(" --- read model --- ")
     # read the model and corresponding weights from file
     model = core.read_model(ir_model)
     input_names = {
@@ -163,23 +187,26 @@ if __name__ == "__main__":
     key_value_input_names = [key for key in input_names if "key_values" in key]
     key_value_output_names = [key for key in output_names if "present" in key]
 
+    import os
+    num_cores = os.cpu_count()
+    log.info(f'num_cores: {num_cores}')
+    read_config()
+
+    core.set_property("CPU",{"INFERENCE_NUM_THREADS": 230})
+    # core.set_property("CPU",{"CPU_BIND_THREAD": "NUMA"})
     print(" --- model compiling --- ")
     # compile the model for CPU devices
     request = core.compile_model(
-        model=model, device_name=args.device,
-        config={ov.properties.inference_num_threads(): 70}
+        model=model, 
+        device_name=args.device,
+        config={
+            # "INFERENCE_NUM_THREADS": 120,
+            ov.properties.cache_dir(): "./model_cache"
+            }
     ).create_infer_request()
 
-    # get inference precision
-    # inference_precision = core.get_property(
-    #     "CPU", ov.properties.hint.inference_precision())
-    inference_precision = core.get_property(
-        "CPU", hints.inference_precision)
-    print(f'\t\inference_precision: {inference_precision}')
-    inference_num_threads = core.get_property(
-        "CPU", ov.properties.inference_num_threads())
-    print(f'\t\inference_num_threads: {inference_num_threads}')
-
+    read_config()
+    # exit(0)
     perf = {"latency": []}
 
     print(" --- start generating --- ")

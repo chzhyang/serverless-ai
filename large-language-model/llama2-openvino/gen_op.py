@@ -52,9 +52,29 @@ log.info(" --- load tokenizer --- ")
 tokenizer = LlamaTokenizer.from_pretrained(
     args.model_id, trust_remote_code=True)
 
+core = ov.Core()
+# read config
+def param_to_string(parameters) -> str:
+    """Convert a list / tuple of parameters returned from IE to a string."""
+    if isinstance(parameters, (list, tuple)):
+        return ', '.join([str(x) for x in parameters])
+    else:
+        return str(parameters)
+log.info('Available devices:')
+for device in core.available_devices:
+    log.info(f'{device}:')
+    log.info('\tSUPPORTED_PROPERTIES:')
+    for property_key in core.get_property(device, 'SUPPORTED_PROPERTIES'):
+        if property_key not in ('SUPPORTED_METRICS', 'SUPPORTED_CONFIG_KEYS', 'SUPPORTED_PROPERTIES'):
+            try:
+                property_val = core.get_property(device, property_key)
+            except TypeError:
+                property_val = 'UNSUPPORTED TYPE'
+            log.info(f'\t\t{property_key}: {param_to_string(property_val)}')
+    log.info('')
 # config
 # config execution model hint(inference_precision)
-core = ov.Core()
+
 if args.accuracy_mode:
     print(" --- set CPU execution hint --- ")
     core.set_property(
@@ -64,10 +84,11 @@ if args.accuracy_mode:
 # config ov
 ov_config = {'PERFORMANCE_HINT': 'LATENCY',
              #  'NUM_STREAMS': '1',
-             "CACHE_DIR": "./",
+             "CACHE_DIR": "./model_cache",
              }
 if args.threads:
     ov_config["INFERENCE_NUM_THREADS"] = str(args.threads)
+    log.info(f'ov_config: {ov_config}')
 
 
 # load model
@@ -90,6 +111,20 @@ inference_num_threads = core.get_property(
 log.info(
     f'inference_precision: {inference_precision}, inference_num_threads: {inference_num_threads}')
 
+# read config
+log.info('Available devices:')
+for device in core.available_devices:
+    log.info(f'{device} :')
+    log.info('\tSUPPORTED_PROPERTIES:')
+    for property_key in core.get_property(device, 'SUPPORTED_PROPERTIES'):
+        if property_key not in ('SUPPORTED_METRICS', 'SUPPORTED_CONFIG_KEYS', 'SUPPORTED_PROPERTIES'):
+            try:
+                property_val = core.get_property(device, property_key)
+            except TypeError:
+                property_val = 'UNSUPPORTED TYPE'
+            log.info(f'\t\t{property_key}: {param_to_string(property_val)}')
+    log.info('')
+
 inputs = tokenizer(args.prompt, return_tensors="pt")
 prompt_tokens = inputs.input_ids.shape[1]
 perf = {"latency": []}
@@ -108,6 +143,7 @@ log.info(" --- text decoding --- ")
 completion = tokenizer.decode(completion_ids,
                               skip_special_tokens=True,
                               clean_up_tokenization_spaces=False)
+
 log.info(f"Generation took {end - st:.3f} s on {args.device}")
 latency = perf["latency"]
 print("latency len: ", len(latency))
