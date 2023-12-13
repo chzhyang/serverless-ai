@@ -1,4 +1,4 @@
-# Weights Compression using Optimum Inte
+# Weights Compression using Optimum Intel(nncf)
 from optimum.intel.openvino import OVModelForCausalLM
 from optimum.intel import OVQuantizer
 from transformers import LlamaTokenizer
