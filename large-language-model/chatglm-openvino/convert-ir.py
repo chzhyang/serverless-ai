@@ -13,12 +13,18 @@ parser.add_argument('-h',
                     action='help',
                     help='Show this help message and exit.')
 parser.add_argument('-m',
-                    '--model_id',
+                    '--model-id',
                     default='THUDM/chatglm3-6b',
                     required=False,
                     type=str,
                     help='orignal model path')
+parser.add_argument('-i',
+                    '--ir-path',
+                    required=True,
+                    type=str,
+                    help='ir model path')
 args = parser.parse_args()
+
 
 def flattenize_inputs(inputs):
     """
@@ -34,28 +40,35 @@ def flattenize_inputs(inputs):
             flatten_inputs.append(input_data)
     return flatten_inputs
 
+
 @torch.jit.script_if_tracing
 def _chatglm2_get_context_layer(query_layer: torch.Tensor, key_layer: torch.Tensor, value_layer: torch.Tensor):
-    mask = torch.zeros((query_layer.shape[-2], key_layer.shape[-2]), dtype=query_layer.dtype)
+    mask = torch.zeros(
+        (query_layer.shape[-2], key_layer.shape[-2]), dtype=query_layer.dtype)
     if query_layer.shape[2] == key_layer.shape[2]:
-        tmp_mask = torch.ones((query_layer.shape[-2], key_layer.shape[-2]), dtype=torch.bool).triu(diagonal=1)
+        tmp_mask = torch.ones(
+            (query_layer.shape[-2], key_layer.shape[-2]), dtype=torch.bool).triu(diagonal=1)
         mask.masked_fill_(tmp_mask, float("-inf"))
 
-    context_layer = torch.nn.functional.scaled_dot_product_attention(query_layer, key_layer, value_layer, attn_mask=mask)
+    context_layer = torch.nn.functional.scaled_dot_product_attention(
+        query_layer, key_layer, value_layer, attn_mask=mask)
     return context_layer
 
 
 def _core_attention_forward(self, query_layer, key_layer, value_layer, attention_mask):
-    query_layer, key_layer, value_layer = [k.permute(1, 2, 0, 3) for k in [query_layer, key_layer, value_layer]]
+    query_layer, key_layer, value_layer = [
+        k.permute(1, 2, 0, 3) for k in [query_layer, key_layer, value_layer]]
     if attention_mask is None:
-        context_layer = _chatglm2_get_context_layer(query_layer, key_layer, value_layer)
+        context_layer = _chatglm2_get_context_layer(
+            query_layer, key_layer, value_layer)
     else:
         attention_mask = ~attention_mask
         context_layer = torch.nn.functional.scaled_dot_product_attention(
             query_layer, key_layer, value_layer, attention_mask
         )
     context_layer = context_layer.permute(2, 0, 1, 3)
-    new_context_layer_shape = context_layer.size()[:-2] + (self.hidden_size_per_partition,)
+    new_context_layer_shape = context_layer.size(
+    )[:-2] + (self.hidden_size_per_partition,)
     context_layer = context_layer.reshape(*new_context_layer_shape)
 
     return context_layer
@@ -68,21 +81,14 @@ def _patch_chatglm_core_attention_forward(model: "PreTrainedModel"):
         )
 
 
-if 'chatglm2' in args.model_id:
-    ir_model_path = Path('chatglm') / Path('chatglm2')
-    if ir_model_path.exists() == False:
-        os.mkdir(ir_model_path)
-elif 'chatglm3' in args.model_id:
-    ir_model_path = Path('chatglm') / Path('chatglm3')
-    if ir_model_path.exists() == False:
-        os.mkdir(ir_model_path)
-else:
-    raise NotImplementedError(f"Unsupported model id {args.model_id!r}")
+ir_model_path = Path(args.ir_path)
+if ir_model_path.exists() == False:
+    os.mkdir(ir_model_path)
 
 ir_model = ir_model_path / "openvino_model.xml"
-model = AutoModelForCausalLM.from_pretrained(args.model_id,                    
-                                            torch_dtype=torch.float32,
-                                            trust_remote_code=True,)
+model = AutoModelForCausalLM.from_pretrained(args.model_id,
+                                             torch_dtype=torch.float32,
+                                             trust_remote_code=True,)
 # _patch_chatglm_core_attention_forward(model)
 model.config.save_pretrained(ir_model_path)
 model.config.use_cache = True
@@ -92,7 +98,8 @@ outs = model(input_ids=torch.ones((1, 10), dtype=torch.long),
 inputs = ["input_ids"]
 outputs = ["logits"]
 
-dynamic_shapes = {"input_ids": {1: "seq_len"}, "position_ids": {1: "seq_len"}, "attention_mask": {1: "seq_len"}}
+dynamic_shapes = {"input_ids": {1: "seq_len"}, "position_ids": {
+    1: "seq_len"}, "attention_mask": {1: "seq_len"}}
 inputs += ["position_ids", "attention_mask"]
 for idx in range(len(outs.past_key_values)):
     inputs.extend(
