@@ -2,6 +2,7 @@ import openvino as ov
 from transformers import LlamaTokenizer
 from optimum.intel.openvino import OVModelForCausalLM
 import time
+import json
 import argparse
 import logging as log
 import sys
@@ -15,14 +16,15 @@ parser.add_argument('-h',
                     help='Show this help message and exit.')
 parser.add_argument('-m',
                     '--model_id',
-                    required=True,
+                    required=False,
                     type=str,
+                    default='/home/ge/models/llama2-7b-ov',
                     help='Required. hugging face model id or local model path')
 parser.add_argument('-p',
                     '--prompt',
                     default='What is AI?',
                     type=str,
-                    help='Required. prompt sentence')
+                    help='prompt sentence')
 parser.add_argument('-l',
                     '--max_sequence_length',
                     default=128,
@@ -41,124 +43,164 @@ parser.add_argument('-a',
                     required=False,
                     type=bool,
                     help='')
-parser.add_argument('--threads',
+parser.add_argument('-t',
+                    '--num-threads',
                     default=False,
                     required=False,
                     type=int,
-                    help='')
+                    help='inference threads number')
+parser.add_argument('-n',
+                    '--num-streams',
+                    default=1,
+                    required=False,
+                    type=int,
+                    help='streams number')
+parser.add_argument('-j',
+                    '--prompt-path',
+                    default='../prompt.json',
+                    required=False,
+                    type=str,
+                    help='Path to prompt file')
+parser.add_argument('-b',
+                    '--batch-size',
+                    default=1,
+                    required=False,
+                    type=int,
+                    help='batch size')
 args = parser.parse_args()
+
+log.info(" --- prepare prompt --- ")
+with open(args.prompt_path, "r") as prompt_file:
+    prompt_pool = json.load(prompt_file)
+    model_prompt=prompt_pool["llama"]
+if args.batch_size == 1:
+    input_prompts = args.prompt
+else:
+    input_prompts = [model_prompt["22"] for i in range(args.batch_size)]
+log.info(f'prompts: {input_prompts}')
 
 log.info(" --- load tokenizer --- ")
 tokenizer = LlamaTokenizer.from_pretrained(
     args.model_id, trust_remote_code=True)
 
 core = ov.Core()
-# read config
-def param_to_string(parameters) -> str:
-    """Convert a list / tuple of parameters returned from IE to a string."""
-    if isinstance(parameters, (list, tuple)):
-        return ', '.join([str(x) for x in parameters])
-    else:
-        return str(parameters)
-log.info('Available devices:')
-for device in core.available_devices:
-    log.info(f'{device}:')
-    log.info('\tSUPPORTED_PROPERTIES:')
-    for property_key in core.get_property(device, 'SUPPORTED_PROPERTIES'):
-        if property_key not in ('SUPPORTED_METRICS', 'SUPPORTED_CONFIG_KEYS', 'SUPPORTED_PROPERTIES'):
-            try:
-                property_val = core.get_property(device, property_key)
-            except TypeError:
-                property_val = 'UNSUPPORTED TYPE'
-            log.info(f'\t\t{property_key}: {param_to_string(property_val)}')
-    log.info('')
-# config
-# config execution model hint(inference_precision)
 
-if args.accuracy_mode:
-    print(" --- set CPU execution hint --- ")
-    core.set_property(
-        "CPU",
-        {ov.properties.hint.execution_mode(): ov.properties.hint.ExecutionMode.ACCURACY},
-    )
-# config ov
-ov_config = {'PERFORMANCE_HINT': 'LATENCY',
-             #  'NUM_STREAMS': '1',
-             "CACHE_DIR": "./model_cache",
-             }
-if args.threads:
-    ov_config["INFERENCE_NUM_THREADS"] = str(args.threads)
-    log.info(f'ov_config: {ov_config}')
 
+# if args.accuracy_mode:
+#     print(" --- set CPU execution hint --- ")
+#     core.set_property(
+#         "CPU",
+#         {ov.properties.hint.execution_mode(): ov.properties.hint.ExecutionMode.ACCURACY},
+#     )
 
 # load model
+ov_config = {
+    'PERFORMANCE_HINT': 'LATENCY',
+    # 'INFERENCE_NUM_THREADS': int(args.num_threads),
+    ov.properties.num_streams(): args.num_streams,
+    "CACHE_DIR": "./",
+}
 try:
     log.info(" --- use local model --- ")
-    # model = OVModelForCausalLM.from_pretrained(
-    #     args.model_id, compile=False, device=args.device)
     model = OVModelForCausalLM.from_pretrained(
-        args.model_id, compile=False, device=args.device, ov_config=ov_config)
+        args.model_id, compile=False,
+        device=args.device,
+        ov_config=ov_config,
+    )
 except:
     log.info(" --- use remote model --- ")
     model = OVModelForCausalLM.from_pretrained(
         args.model_id, compile=False, device=args.device, export=True)
+
 model.compile()
 
-inference_precision = core.get_property(
-    "CPU", ov.properties.hint.inference_precision())
-inference_num_threads = core.get_property(
-    "CPU", ov.properties.inference_num_threads())
-log.info(
-    f'inference_precision: {inference_precision}, inference_num_threads: {inference_num_threads}')
+# get property
+compiled_model = model.request.get_compiled_model()
+log.info(f'PERFORMANCE_HINT: {compiled_model.get_property("PERFORMANCE_HINT")}')
+log.info(f'inference_num_threads: {compiled_model.get_property("inference_num_threads".upper())}')
+log.info(f'enable_hyper_threading: {compiled_model.get_property("enable_hyper_threading".upper())}')
+log.info(f'num_streams: {compiled_model.get_property(ov.properties.num_streams())}')
+log.info(f'inference_precision: {compiled_model.get_property(ov.properties.hint.inference_precision())}')
 
-# read config
-log.info('Available devices:')
-for device in core.available_devices:
-    log.info(f'{device} :')
-    log.info('\tSUPPORTED_PROPERTIES:')
-    for property_key in core.get_property(device, 'SUPPORTED_PROPERTIES'):
-        if property_key not in ('SUPPORTED_METRICS', 'SUPPORTED_CONFIG_KEYS', 'SUPPORTED_PROPERTIES'):
-            try:
-                property_val = core.get_property(device, property_key)
-            except TypeError:
-                property_val = 'UNSUPPORTED TYPE'
-            log.info(f'\t\t{property_key}: {param_to_string(property_val)}')
-    log.info('')
 
-inputs = tokenizer(args.prompt, return_tensors="pt")
-prompt_tokens = inputs.input_ids.shape[1]
+log.info(" --- warm up ---")
+warm_prompt = "Once upon a time, there existed a little girl who liked to have adventures."
+warm_inputs = tokenizer(warm_prompt, return_tensors="pt")
+warm_prompt_tokens = warm_inputs.input_ids.shape[1]
+log.info(type(warm_inputs.input_ids))
+log.info(warm_inputs.input_ids)
+log.info(warm_inputs.input_ids.shape[0])
+log.info(warm_inputs.input_ids.shape[1])
 perf = {"latency": []}
+_ = model.generate(warm_inputs.input_ids,
+                    max_length=args.max_sequence_length+warm_prompt_tokens,
+                    pad_token_id = 2,
+                    attention_mask = warm_inputs["attention_mask"],
+                    perf=perf)
+# if args.batch_size > 1:
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.padding_side='left'
+inputs = tokenizer(input_prompts,
+                    return_tensors="pt",
+                    padding=True)
+# if args.num_streams == 1:
+#     inputs = tokenizer(args.prompt, return_tensors="pt")
+# elif args.num_streams == 2:
+#     tokenizer.pad_token = tokenizer.eos_token
+#     tokenizer.padding_side='left'
+#     inputs = tokenizer([args.prompt, "once upon a time, there existed a little girl who liked to have"],
+#                         return_tensors="pt",
+#                         padding=True)
+# inputs = tokenizer(args.prompt, return_tensors="pt")
+log.info(f'input_ids: {type(inputs.input_ids)}')
+# log.info(inputs.input_ids)
+log.info(inputs.input_ids.shape[0])
+log.info(inputs.input_ids.shape[1])
 
+prompt_tokens = inputs.input_ids.shape[1]
 log.info(" --- start generating --- ")
+perf = {"latency": []}
 st = time.perf_counter()
 output_ids = model.generate(inputs.input_ids,
                             max_length=args.max_sequence_length+prompt_tokens,
+                            pad_token_id = 2,
+                            attention_mask = inputs["attention_mask"],
                             perf=perf)
 end = time.perf_counter()
 
+# log.info(type(output_ids))
+# log.info(output_ids)
 
-completion_ids = output_ids[0].tolist()[prompt_tokens:]
+# if args.num_streams == 1:
+#     completion_ids = output_ids[0].tolist()[prompt_tokens:]
+# elif args.num_streams == 2:
+#     completion_ids = [output_id.tolist()[prompt_tokens:] for output_id in output_ids]
+completion_ids = [output_id.tolist()[prompt_tokens:] for output_id in output_ids]
+
+# log.info(completion_ids)
+
 
 log.info(" --- text decoding --- ")
-completion = tokenizer.decode(completion_ids,
-                              skip_special_tokens=True,
-                              clean_up_tokenization_spaces=False)
+# completion = tokenizer.decode(completion_ids,
+#                               skip_special_tokens=True,
+#                               clean_up_tokenization_spaces=False)
+completions = tokenizer.batch_decode(
+                            sequences=completion_ids,
+                            skip_special_tokens=True,
+                            clean_up_tokenization_spaces=False)
 
 log.info(f"Generation took {end - st:.3f} s on {args.device}")
-latency = perf["latency"]
-print("latency len: ", len(latency))
-result = {
-    "completion": completion,
-    "prompt_tokens": prompt_tokens,
-    "total_dur_s": end-st,  # total time, include tokeninzer.encode+decode, tokens generation
-    "completion_tokens": len(completion_ids),
-    # total tokens completion latency, except tokenizer.decode time
-    "total_token_latency_s": sum(latency),
-    # first token completion latency
-    "first_token_latency_ms": latency[0]*1000 if len(latency) > 0 else 0,
-    # next token completion latency
-    "next_token_latency_ms": sum(latency[1:])*1000 / len(latency[1:]) if len(latency) > 1 else 0,
-    # average token completion latency
-    "avg_token_latency_ms": sum(latency)*1000 / len(latency) if len(latency) > 0 else 0,
-}
-log.info(result)
+if perf["latency"] != []:
+    latency = perf["latency"]
+    print("latency len: ", len(latency))
+
+    log.info(f'completions: {completions}')
+    log.info(f'prompt_tokens: {prompt_tokens}')
+    log.info(f'batch_size: {inputs.input_ids.shape[0]}')
+    log.info(f'total_dur_s: {end-st}')  # total time, include tokeninzer.encode+decode, tokens generation
+    log.info(f'completion_tokens: {len(completion_ids)}')
+    log.info(f'total_token_latency_s: {sum(latency)}')
+    log.info(f'first_token_latency_ms: {latency[0]*1000 if len(latency) > 0 else 0}')        # next token completion latency
+    log.info(f'next_token_latency_ms: {sum(latency[1:])*1000 / len(latency[1:]) if len(latency) > 1 else 0}')
+    log.info(f'avg_token_latency_ms: {sum(latency)*1000 / len(latency) if len(latency) > 0 else 0}')
+
