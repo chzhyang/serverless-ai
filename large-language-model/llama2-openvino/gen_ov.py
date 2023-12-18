@@ -124,7 +124,7 @@ def generate_sequence(sampling, input_ids, attention_mask, eos_token_id,
                                                p=probs[0],
                                                replace=True)
             else:
-                next_tokens = np.argmax(next_token_scores, axis=-1)
+                next_tokens = np.argmax(next_token_scores, axis=-1) # greedy search
             # break the loop if max length or end of text token is reached
             if (len(input_ids[0]) - prompt_len
                     ) == max_sequence_length or next_tokens == eos_token_id:

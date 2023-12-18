@@ -51,7 +51,7 @@ parser.add_argument('-t',
                     help='inference threads number')
 parser.add_argument('-n',
                     '--num-streams',
-                    default=1,
+                    default=2,
                     required=False,
                     type=int,
                     help='streams number')
@@ -95,15 +95,16 @@ core = ov.Core()
 
 # load model
 ov_config = {
-    'PERFORMANCE_HINT': 'LATENCY',
+    # 'PERFORMANCE_HINT': 'LATENCY',
     # 'INFERENCE_NUM_THREADS': int(args.num_threads),
-    ov.properties.num_streams(): args.num_streams,
+    # ov.properties.num_streams(): args.num_streams,
     "CACHE_DIR": "./",
 }
 try:
     log.info(" --- use local model --- ")
     model = OVModelForCausalLM.from_pretrained(
-        args.model_id, compile=False,
+        args.model_id,
+        compile=False,
         device=args.device,
         ov_config=ov_config,
     )
@@ -120,17 +121,17 @@ log.info(f'PERFORMANCE_HINT: {compiled_model.get_property("PERFORMANCE_HINT")}')
 log.info(f'inference_num_threads: {compiled_model.get_property("inference_num_threads".upper())}')
 log.info(f'enable_hyper_threading: {compiled_model.get_property("enable_hyper_threading".upper())}')
 log.info(f'num_streams: {compiled_model.get_property(ov.properties.num_streams())}')
+log.info(f'OPTIMAL_NUMBER_OF_INFER_REQUESTS: {compiled_model.get_property("OPTIMAL_NUMBER_OF_INFER_REQUESTS")}')
 log.info(f'inference_precision: {compiled_model.get_property(ov.properties.hint.inference_precision())}')
 
-
-log.info(" --- warm up ---")
+log.info(" --- Warm up ---")
 warm_prompt = "Once upon a time, there existed a little girl who liked to have adventures."
 warm_inputs = tokenizer(warm_prompt, return_tensors="pt")
 warm_prompt_tokens = warm_inputs.input_ids.shape[1]
-log.info(type(warm_inputs.input_ids))
-log.info(warm_inputs.input_ids)
-log.info(warm_inputs.input_ids.shape[0])
-log.info(warm_inputs.input_ids.shape[1])
+# log.info(type(warm_inputs.input_ids))
+# log.info(warm_inputs.input_ids)
+# log.info(warm_inputs.input_ids.shape[0])
+# log.info(warm_inputs.input_ids.shape[1])
 perf = {"latency": []}
 _ = model.generate(warm_inputs.input_ids,
                     max_length=args.max_sequence_length+warm_prompt_tokens,
@@ -152,10 +153,10 @@ inputs = tokenizer(input_prompts,
 #                         return_tensors="pt",
 #                         padding=True)
 # inputs = tokenizer(args.prompt, return_tensors="pt")
-log.info(f'input_ids: {type(inputs.input_ids)}')
+# log.info(f'input_ids: {type(inputs.input_ids)}')
 # log.info(inputs.input_ids)
-log.info(inputs.input_ids.shape[0])
-log.info(inputs.input_ids.shape[1])
+# log.info(inputs.input_ids.shape[0])
+# log.info(inputs.input_ids.shape[1])
 
 prompt_tokens = inputs.input_ids.shape[1]
 log.info(" --- start generating --- ")
