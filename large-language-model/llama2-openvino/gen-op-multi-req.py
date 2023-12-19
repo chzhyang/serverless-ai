@@ -10,6 +10,39 @@ log.basicConfig(format='[ %(levelname)s ] %(message)s',
                 level=log.INFO, stream=sys.stdout)
 
 parser = argparse.ArgumentParser(add_help=False)
+
+
+def generate(model, inputs, args, perf):
+    st = time.perf_counter()
+    output_ids = model.generate(inputs.input_ids,
+                            max_length=args.max_sequence_length+prompt_tokens,
+                            pad_token_id = 2,
+                            attention_mask = inputs["attention_mask"],
+                            perf=perf)
+    end = time.perf_counter()
+    # queue.put(f'dur:{end-st}')
+    perf["dur_s"] = (end-st)/1000
+    perf["output_ids"] = output_ids
+
+def get_result(perf):
+    output_ids = perf["output_ids"]
+    completion_ids = [output_id.tolist()[prompt_tokens:] for output_id in output_ids]
+    log.info(" ==================== text decoding ==================== ")
+    completions = tokenizer.batch_decode(
+                                sequences=completion_ids,
+                                skip_special_tokens=True,
+                                clean_up_tokenization_spaces=False)
+    latency = perf["latency"]
+    log.info(f'completions: {completions}')
+    log.info(f'prompt_tokens: {prompt_tokens}')
+    log.info(f'batch_size: {inputs.input_ids.shape[0]}')
+    log.info(f'total_dur_s: {perf["dur_s"]:.3f}')  # total time, include tokeninzer.encode+decode, tokens generation
+    log.info(f'completion_tokens: {len(completion_ids)}')
+    log.info(f'total_token_latency_s: {sum(latency)}')
+    log.info(f'first_token_latency_ms: {latency[0]*1000 if len(latency) > 0 else 0}')        # next token completion latency
+    log.info(f'next_token_latency_ms: {sum(latency[1:])*1000 / len(latency[1:]) if len(latency) > 1 else 0}')
+    log.info(f'avg_token_latency_ms: {sum(latency)*1000 / len(latency) if len(latency) > 0 else 0}')
+
 parser.add_argument('-h',
                     '--help',
                     action='help',
@@ -69,7 +102,7 @@ parser.add_argument('-b',
                     help='batch size')
 args = parser.parse_args()
 
-log.info(" --- prepare prompt --- ")
+log.info(" ==================== prepare prompt ==================== ")
 with open(args.prompt_path, "r") as prompt_file:
     prompt_pool = json.load(prompt_file)
     model_prompt=prompt_pool["llama"]
@@ -79,7 +112,7 @@ else:
     input_prompts = [model_prompt["22"] for i in range(args.batch_size)]
 log.info(f'prompts: {input_prompts}')
 
-log.info(" --- load tokenizer --- ")
+log.info(" ==================== load tokenizer ==================== ")
 tokenizer = LlamaTokenizer.from_pretrained(
     args.model_id, trust_remote_code=True)
 
@@ -93,7 +126,7 @@ ov_config = {
     "CACHE_DIR": "./",
 }
 try:
-    log.info(" --- use local model --- ")
+    log.info(" ==================== use local model ==================== ")
     model = OVModelForCausalLM.from_pretrained(
         args.model_id,
         compile=False,
@@ -101,7 +134,7 @@ try:
         ov_config=ov_config,
     )
 except:
-    log.info(" --- use remote model --- ")
+    log.info(" ==================== use remote model ==================== ")
     model = OVModelForCausalLM.from_pretrained(
         args.model_id, compile=False, device=args.device, export=True)
 
@@ -116,7 +149,7 @@ log.info(f'num_streams: {compiled_model.get_property(ov.properties.num_streams()
 log.info(f'OPTIMAL_NUMBER_OF_INFER_REQUESTS: {compiled_model.get_property("OPTIMAL_NUMBER_OF_INFER_REQUESTS")}')
 log.info(f'inference_precision: {compiled_model.get_property(ov.properties.hint.inference_precision())}')
 
-log.info(" --- Warm up ---")
+log.info(" ==================== Warm up ====================")
 warm_prompt = "Once upon a time, there existed a little girl who liked to have adventures."
 warm_inputs = tokenizer(warm_prompt, return_tensors="pt")
 warm_prompt_tokens = warm_inputs.input_ids.shape[1]
@@ -151,49 +184,27 @@ inputs = tokenizer(input_prompts,
 # log.info(inputs.input_ids.shape[1])
 
 prompt_tokens = inputs.input_ids.shape[1]
-log.info(" --- start generating --- ")
-perf = {"latency": []}
-st = time.perf_counter()
-output_ids = model.generate(inputs.input_ids,
-                            max_length=args.max_sequence_length+prompt_tokens,
-                            pad_token_id = 2,
-                            attention_mask = inputs["attention_mask"],
-                            perf=perf)
-end = time.perf_counter()
+log.info(" ==================== start generating in paralle ==================== ")
+import threading
+perf1 = {"latency": []}
+perf2 = {"latency": []}
+# from queue import Queue
+# result_queue = Queue()
+thread1 = threading.Thread(target=generate, args=(model,inputs,args, perf1))
+thread2 = threading.Thread(target=generate, args=(model,inputs,args, perf2))
+# 启动线程
+thread1.start()
+thread2.start()
 
-# log.info(type(output_ids))
-# log.info(output_ids)
+# 等待两个线程执行完毕
+thread1.join()
+thread2.join()
 
-# if args.num_streams == 1:
-#     completion_ids = output_ids[0].tolist()[prompt_tokens:]
-# elif args.num_streams == 2:
-#     completion_ids = [output_id.tolist()[prompt_tokens:] for output_id in output_ids]
-completion_ids = [output_id.tolist()[prompt_tokens:] for output_id in output_ids]
+log.info("==================== Both threads have finished ======================")
 
-# log.info(completion_ids)
+log.info(("==================== result of thread1 ======================"))
 
+get_result(perf1)
 
-log.info(" --- text decoding --- ")
-# completion = tokenizer.decode(completion_ids,
-#                               skip_special_tokens=True,
-#                               clean_up_tokenization_spaces=False)
-completions = tokenizer.batch_decode(
-                            sequences=completion_ids,
-                            skip_special_tokens=True,
-                            clean_up_tokenization_spaces=False)
-
-log.info(f"Generation took {end - st:.3f} s on {args.device}")
-if perf["latency"] != []:
-    latency = perf["latency"]
-    print("latency len: ", len(latency))
-
-    log.info(f'completions: {completions}')
-    log.info(f'prompt_tokens: {prompt_tokens}')
-    log.info(f'batch_size: {inputs.input_ids.shape[0]}')
-    log.info(f'total_dur_s: {end-st}')  # total time, include tokeninzer.encode+decode, tokens generation
-    log.info(f'completion_tokens: {len(completion_ids)}')
-    log.info(f'total_token_latency_s: {sum(latency)}')
-    log.info(f'first_token_latency_ms: {latency[0]*1000 if len(latency) > 0 else 0}')        # next token completion latency
-    log.info(f'next_token_latency_ms: {sum(latency[1:])*1000 / len(latency[1:]) if len(latency) > 1 else 0}')
-    log.info(f'avg_token_latency_ms: {sum(latency)*1000 / len(latency) if len(latency) > 0 else 0}')
-
+log.info(("==================== result of thread2 ======================"))
+get_result(perf2)
