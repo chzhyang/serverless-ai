@@ -249,7 +249,6 @@ if __name__ == "__main__":
 
     request = compile_model.create_infer_request()
 
-    # exit(0)
     perf = {"latency": []}
     print(" --- warm up ---")
     warm_prompt = "Once upon a time, there existed a little girl who liked to have adventures."

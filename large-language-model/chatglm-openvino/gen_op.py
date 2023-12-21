@@ -1,5 +1,5 @@
 import openvino as ov
-from transformers import LlamaTokenizer
+from transformers import AutoTokenizer
 from optimum.intel.openvino import OVModelForCausalLM
 import time
 import json
@@ -80,7 +80,7 @@ else:
 log.info(f'prompts: {input_prompts}')
 
 log.info(" --- load tokenizer --- ")
-tokenizer = LlamaTokenizer.from_pretrained(
+tokenizer = AutoTokenizer.from_pretrained(
     args.model_id, trust_remote_code=True)
 
 core = ov.Core()
@@ -92,18 +92,19 @@ ov_config = {
     # ov.properties.num_streams(): args.num_streams,
     "CACHE_DIR": "./",
 }
-try:
-    log.info(" --- use local model --- ")
-    model = OVModelForCausalLM.from_pretrained(
-        args.model_id,
-        compile=False,
-        device=args.device,
-        ov_config=ov_config,
+# try:
+log.info(" --- use local model --- ")
+model = OVModelForCausalLM.from_pretrained(
+    args.model_id,
+    compile=False,
+    device=args.device,
+    ov_config=ov_config,
+    trust_remote_code=True,
     )
-except:
-    log.info(" --- use remote model --- ")
-    model = OVModelForCausalLM.from_pretrained(
-        args.model_id, compile=False, device=args.device, export=True)
+# except:
+#     log.info(" --- use remote model --- ")
+#     model = OVModelForCausalLM.from_pretrained(
+#         args.model_id, compile=False, device=args.device, export=True)
 
 model.compile()
 
